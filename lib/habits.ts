@@ -1,7 +1,18 @@
 export type Kind = "goal" | "limit";
 export type Tone = "progress" | "done" | "warn" | "over";
 
+export const toneClass: Record<Tone, string> = {
+  progress: "",
+  done: "text-emerald-600 dark:text-emerald-400",
+  warn: "text-amber-600 dark:text-amber-400",
+  over: "text-red-600 dark:text-red-400",
+};
+
 // A goal is met at count >= target; a limit holds while count <= target.
+export function onTrack(kind: Kind, count: number, target: number) {
+  return kind === "goal" ? count >= target : count <= target;
+}
+
 export function habitStatus(kind: Kind, count: number, target: number): { tone: Tone; label: string } {
   if (kind === "goal") {
     return count >= target
@@ -18,6 +29,38 @@ const osloDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Oslo" });
 
 export function osloDay(date: Date | string | number) {
   return osloDate.format(new Date(date));
+}
+
+// Calendar arithmetic on YYYY-MM-DD. UTC here only avoids DST; the day is already Oslo's.
+export function addDays(day: string, n: number) {
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+// Consecutive on-track days ending today. A day with no logs counts as 0, which
+// fails a goal and passes a limit, so `first` (the first logged day) stops a limit
+// streak from reaching back before tracking began. An unfinished goal day doesn't
+// end a streak; a limit already over target today has.
+export function streak(
+  kind: Kind,
+  target: number,
+  counts: Map<string, number>,
+  today: string,
+  first: string | undefined,
+) {
+  if (!first) return 0;
+  let day = today;
+  if (!onTrack(kind, counts.get(day) ?? 0, target)) {
+    if (kind === "limit") return 0;
+    day = addDays(day, -1);
+  }
+  let n = 0;
+  while (day >= first && onTrack(kind, counts.get(day) ?? 0, target)) {
+    n++;
+    day = addDays(day, -1);
+  }
+  return n;
 }
 
 export function formatGap(ms: number) {
