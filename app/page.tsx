@@ -25,7 +25,7 @@ export default async function Dashboard() {
   const { data: auth } = await supabase.auth.getClaims();
   if (!auth) redirect("/login");
 
-  // ponytail: loads every logged day per habit. PostgREST caps a response at max_rows
+  // Loads every logged day per habit. PostgREST caps a response at max_rows
   // (1000 by default); move streaks into SQL before a habit has years of days.
   const { data: habits } = await supabase
     .from("habits")
@@ -104,7 +104,8 @@ export default async function Dashboard() {
                       role="img"
                       aria-label={label}
                       title={label}
-                      className={`aspect-square rounded-md ${className}`}
+                      // Ringed because an unfinished goal day isn't a miss yet.
+                      className={`aspect-square rounded-md ${className} ${day === today ? "ring-2 ring-neutral-400 ring-offset-2 ring-offset-neutral-50 dark:ring-offset-neutral-900" : ""}`}
                       style={style}
                     />
                   );

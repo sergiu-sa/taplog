@@ -26,10 +26,13 @@ export async function GET(
   // Check-then-insert: a second request that arrives before the first insert lands
   // (hundreds of ms on a cold start) also inserts. Fix with a locking SQL function if seen.
   const since = new Date(Date.now() - DEDUPE_MS).toISOString();
+  // Sticker taps only: a dashboard +1 just before a tap is a separate entry, and
+  // matching it would hand this tap's Undo the manual row.
   const { data: recent } = await supabaseAdmin
     .from("logs")
     .select("id")
     .eq("habit_slug", habit)
+    .eq("source", "nfc")
     .gt("created_at", since)
     .order("created_at", { ascending: false })
     .limit(1)

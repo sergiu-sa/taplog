@@ -13,8 +13,8 @@ async function sendLink(formData: FormData) {
     options: {
       // Sign-ups are also disabled project-wide; this keeps an unknown address from creating a user.
       shouldCreateUser: false,
-      // Next rejects Server Action POSTs whose Origin doesn't match the host, so this is
-      // the real origin. Supabase also checks it against the Redirect URLs allow list.
+      // Browsers send Origin on this POST and Next rejects one that doesn't match the host.
+      // Supabase checks the result against its Redirect URLs list, else uses the Site URL.
       emailRedirectTo: `${(await headers()).get("origin")}/auth/confirm`,
     },
   });
