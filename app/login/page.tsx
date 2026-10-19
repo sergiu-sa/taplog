@@ -1,63 +1,39 @@
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { LoginForm, type LoginState } from "./login-form";
 
-async function sendLink(formData: FormData) {
+// A typed code instead of a magic link: a link only worked in the browser that asked
+// for it, and anything that opened it first (a mail preview, a scanner) used it up.
+// The email template must carry only {{ .Token }}; a link would spend the same token.
+async function login(_prev: LoginState, formData: FormData): Promise<LoginState> {
   "use server";
   const email = formData.get("email");
-  if (typeof email !== "string") redirect("/login");
+  const token = formData.get("token");
+  if (typeof email !== "string") return {};
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      // Sign-ups are also disabled project-wide; this keeps an unknown address from creating a user.
-      shouldCreateUser: false,
-      // Browsers send Origin on this POST and Next rejects one that doesn't match the host.
-      // Supabase checks the result against its Redirect URLs list, else uses the Site URL.
-      emailRedirectTo: `${(await headers()).get("origin")}/auth/confirm`,
-    },
-  });
-  // Same screen either way, so the form doesn't reveal which address has an account.
-  if (error) console.error("signInWithOtp:", error.message);
 
-  redirect("/login?sent=1");
+  if (typeof token !== "string") {
+    // Sign-ups are also disabled project-wide; this keeps an unknown address from creating a user.
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+    // Same answer either way, so the form doesn't reveal which address has an account.
+    if (error) console.error("signInWithOtp:", error.message);
+    return { email };
+  }
+
+  const { error } = await supabase.auth.verifyOtp({ email, token: token.trim(), type: "email" });
+  if (error) {
+    console.error("verifyOtp:", error.message);
+    return { email, error: "That code didn't work. Codes expire after an hour and work once." };
+  }
+  redirect("/");
 }
 
-export default async function LoginPage({ searchParams }: PageProps<"/login">) {
-  const { sent, error } = await searchParams;
-
+export default function LoginPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col px-6 pt-16">
       <h1 className="text-2xl font-semibold">taplog</h1>
-
-      {sent ? (
-        <p className="mt-6 text-neutral-500">
-          If that address is yours, a sign-in link is on its way. Open it in this browser.
-          Nothing after a few minutes? Only a couple of emails go out per hour.
-        </p>
-      ) : (
-        <form action={sendLink} className="mt-8 flex flex-col gap-3">
-          {error && (
-            <p className="text-sm text-red-600 dark:text-red-400">
-              That link didn&apos;t work. It expires after an hour, works once, and only in
-              the browser you requested it from.
-            </p>
-          )}
-          <input
-            type="email"
-            name="email"
-            required
-            autoComplete="email"
-            placeholder="you@example.com"
-            aria-label="Email"
-            className="h-14 rounded-2xl bg-neutral-100 px-4 text-lg dark:bg-neutral-900"
-          />
-          <button className="h-14 rounded-2xl bg-neutral-900 text-lg font-medium text-white active:bg-neutral-700 dark:bg-neutral-100 dark:text-neutral-900 dark:active:bg-neutral-300">
-            Email me a link
-          </button>
-        </form>
-      )}
+      <LoginForm action={login} />
     </main>
   );
 }
