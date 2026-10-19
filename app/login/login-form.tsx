@@ -46,7 +46,6 @@ export function LoginForm({
         inputMode="numeric"
         // Lets Safari offer the code straight from Mail.
         autoComplete="one-time-code"
-        pattern="[0-9]{6,10}"
         placeholder="Code"
         aria-label="Code"
         className={`${field} tracking-widest tabular-nums`}

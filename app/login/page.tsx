@@ -2,9 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm, type LoginState } from "./login-form";
 
-// A typed code instead of a magic link: a link only worked in the browser that asked
-// for it, and anything that opened it first (a mail preview, a scanner) used it up.
-// The email template must carry only {{ .Token }}; a link would spend the same token.
+// The Supabase email template must carry only {{ .Token }}: a link shares the same
+// one-time token, so a mail preview or scanner opening it would void the code.
 async function login(_prev: LoginState, formData: FormData): Promise<LoginState> {
   "use server";
   const email = formData.get("email");
