@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { signId } from "@/lib/sig";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 const DEDUPE_MS = 30_000;
@@ -36,6 +37,7 @@ export async function GET(
     .throwOnError();
 
   let id = recent?.id;
+  const dup = Boolean(id);
   if (!id) {
     const { data } = await supabaseAdmin
       .from("logs")
@@ -46,7 +48,9 @@ export async function GET(
     id = data.id;
   }
 
-  return Response.redirect(new URL(`/logged?id=${id}`, request.url), 303);
+  const params = new URLSearchParams({ id: String(id), sig: signId(id) });
+  if (dup) params.set("dup", "1");
+  return Response.redirect(new URL(`/logged?${params}`, request.url), 303);
 }
 
 // Next answers HEAD by running GET, so link checkers would log a tap. 204, not 405,
