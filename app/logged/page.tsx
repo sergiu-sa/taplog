@@ -1,18 +1,11 @@
 import { refresh } from "next/cache";
 import { notFound } from "next/navigation";
-import { formatGap, habitStatus, osloDay, type Kind, type Tone } from "@/lib/habits";
+import { formatGap, habitStatus, osloDay, toneClass, type Kind } from "@/lib/habits";
 import { verifyId } from "@/lib/sig";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { UndoButton } from "./undo-button";
 
 const UNDO_MS = 2 * 60_000;
-
-const toneClass: Record<Tone, string> = {
-  progress: "",
-  done: "text-emerald-600 dark:text-emerald-400",
-  warn: "text-amber-600 dark:text-amber-400",
-  over: "text-red-600 dark:text-red-400",
-};
 
 // Reachable by any POST, not just this page's button, so it re-verifies everything.
 async function undo(_prev: string | null, formData: FormData) {
