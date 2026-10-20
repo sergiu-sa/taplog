@@ -30,7 +30,7 @@ async function login(_prev: LoginState, formData: FormData): Promise<LoginState>
 
 export default function LoginPage() {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col px-6 pt-16">
+    <main id="main" className="mx-auto flex min-h-dvh max-w-sm flex-col px-6 pt-16">
       <h1 className="text-2xl font-semibold">taplog</h1>
       <LoginForm action={login} />
     </main>

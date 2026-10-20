@@ -43,7 +43,7 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
   // A valid signature means /log created this row, so if it's gone it was deleted.
   if (!log) {
     return (
-      <main className="mx-auto flex min-h-dvh max-w-sm flex-col px-6 pt-16">
+      <main id="main" className="mx-auto flex min-h-dvh max-w-sm flex-col px-6 pt-16">
         <p className="text-sm font-medium text-neutral-500">Undone</p>
         <h1 className="mt-2 text-2xl font-semibold">That tap was removed</h1>
         <p className="mt-2 text-neutral-500">It no longer counts.</p>
@@ -84,7 +84,7 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
   const now = Date.now();
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-sm flex-col px-6 pt-16 pb-8">
+    <main id="main" className="mx-auto flex min-h-dvh max-w-sm flex-col px-6 pt-16 pb-8">
       <p className="text-sm font-medium text-neutral-500">
         {dup ? "Already counted" : "✓ Logged"}
       </p>
