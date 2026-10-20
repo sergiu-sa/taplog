@@ -1,1 +1,591 @@
 @import "tailwindcss";
+
+/* Tokens from DESIGN.md. Colours follow prefers-color-scheme through light-dark(). */
+@theme {
+  --color-ground: light-dark(#f3f4f1, #0d0e0d);
+  --color-ink: light-dark(#111311, #e9ebe7);
+  --color-muted: light-dark(#5d625c, #989d97);
+  --color-etch: light-dark(#b3b8b1, #5a5f59);
+  --color-short: light-dark(#c2202f, #ff5d52);
+
+  --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
+
+  --text-count: clamp(3.5rem, 2.2rem + 5.4vw, 8rem);
+  --text-count--line-height: 0.85;
+  --text-count--letter-spacing: -0.055em;
+  --text-count--font-weight: 800;
+  --text-fact: clamp(2.5rem, 1.8rem + 2.8vw, 4.5rem);
+  --text-fact--line-height: 0.9;
+  --text-fact--letter-spacing: -0.045em;
+  --text-fact--font-weight: 800;
+  --text-title: clamp(1.75rem, 1.45rem + 1.2vw, 2.5rem);
+  --text-title--line-height: 1;
+  --text-title--letter-spacing: -0.03em;
+  --text-title--font-weight: 700;
+  --text-name: clamp(1.125rem, 1.02rem + 0.45vw, 1.375rem);
+  --text-name--line-height: 1.15;
+  --text-name--letter-spacing: -0.015em;
+  --text-name--font-weight: 650;
+  --text-body: clamp(1rem, 0.96rem + 0.18vw, 1.125rem);
+  --text-body--line-height: 1.5;
+  --text-meta: 0.875rem;
+  --text-meta--line-height: 1.35;
+  --text-meta--font-weight: 500;
+  --text-tiny: 0.8125rem;
+  --text-tiny--line-height: 1.3;
+  --text-tiny--letter-spacing: 0.01em;
+  --text-tiny--font-weight: 500;
+
+  --breakpoint-desk: 68.75rem;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* expo.out */
+  --ease-soft: cubic-bezier(0.215, 0.61, 0.355, 1); /* power3.out */
+}
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+  body {
+    background: var(--color-ground);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--color-ink);
+    color: var(--color-ground);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 3px;
+  }
+  main:focus {
+    outline: none;
+  }
+}
+
+@layer components {
+  .skip-link {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 10;
+    padding: 0.6em 1em;
+    border-radius: 12px;
+    background: var(--color-ink);
+    color: var(--color-ground);
+    translate: 0 -200%;
+  }
+  .skip-link:focus-visible {
+    translate: none;
+  }
+
+  /* Trace run: a 2 px line runs in from the left. The current page keeps a 1 px one at rest. */
+  .trace {
+    --rest: 0%;
+    background:
+      linear-gradient(currentColor 0 0) left bottom 0.4rem / 0% 2px no-repeat,
+      linear-gradient(currentColor 0 0) left bottom 0.4rem / var(--rest) 1px no-repeat;
+    transition: background-size 0.45s var(--ease-out);
+  }
+  .trace[aria-current="page"] {
+    --rest: 100%;
+  }
+  .trace:focus-visible {
+    border-radius: 4px;
+    outline-offset: 4px;
+  }
+  .trace:focus-visible {
+    background-size:
+      100% 2px,
+      var(--rest) 1px;
+  }
+  @media (hover: hover) {
+    .trace:hover {
+      background-size:
+        100% 2px,
+        var(--rest) 1px;
+    }
+  }
+
+  /* Grid: 6 columns on phones, the same composition wider up to the desktop breakpoint, 12 above. */
+  .page {
+    --margin: 16px;
+    --gutter: 12px;
+    max-width: calc(42rem + 2 * var(--margin));
+    margin-inline: auto;
+    padding-inline: var(--margin);
+  }
+  @media (width >= 48rem) {
+    .page {
+      --margin: 24px;
+      --gutter: 16px;
+    }
+  }
+  /* The sheet stays narrow enough that coil and grid fill each column. */
+  @media (width >= 68.75rem) {
+    .page {
+      --margin: 32px;
+      --gutter: 24px;
+      max-width: calc(68rem + 2 * var(--margin));
+    }
+  }
+
+  .masthead {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 12px;
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: 500;
+  }
+  .masthead a {
+    padding-block: 0.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .masthead time {
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .title {
+    margin-top: 24px;
+    padding-bottom: 20px;
+    font-size: var(--text-title);
+    line-height: var(--text-title--line-height);
+    letter-spacing: var(--text-title--letter-spacing);
+    font-weight: var(--text-title--font-weight);
+  }
+
+  .colophon {
+    display: grid;
+    gap: 8px;
+    padding-block: 20px 32px;
+    border-top: 1px solid var(--color-etch);
+    text-wrap: pretty;
+    color: var(--color-muted);
+    font-size: var(--text-tiny);
+    line-height: var(--text-tiny--line-height);
+    font-weight: 500;
+  }
+
+  /* One habit: count and days on the left, the coil on the right where the thumb is. */
+  .habit {
+    --trace: light-dark(color-mix(in oklab, var(--habit) 80%, black), var(--habit));
+    --glint: color-mix(in oklab, var(--habit) 45%, white);
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+      "name name name streak streak streak"
+      "today today today coil coil coil"
+      "days days days coil coil coil";
+    column-gap: var(--gutter);
+    padding-block: 18px 22px;
+    border-top: 1px solid var(--color-etch);
+  }
+  .habit__name {
+    grid-area: name;
+    font-size: var(--text-name);
+    line-height: var(--text-name--line-height);
+    letter-spacing: var(--text-name--letter-spacing);
+    font-weight: var(--text-name--font-weight);
+  }
+  .habit__streak {
+    grid-area: streak;
+    justify-self: end;
+    align-self: baseline;
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .habit__today {
+    grid-area: today;
+    margin-top: 18px;
+  }
+  .count {
+    display: flex;
+    align-items: flex-start;
+    margin-left: -0.04em;
+    font-size: var(--text-count);
+    line-height: var(--text-count--line-height);
+    letter-spacing: var(--text-count--letter-spacing);
+    font-weight: var(--text-count--font-weight);
+    /* Proportional: a tabular 1 leaves a gap before the target. */
+    font-variant-numeric: proportional-nums;
+  }
+  .count__of {
+    margin: 0.06em 0 0 0.1em;
+    color: var(--color-muted);
+    font-size: 0.42em;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+  .habit__status {
+    margin-top: 10px;
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: 600;
+  }
+  .habit__status[data-tone="progress"] {
+    color: var(--color-muted);
+    font-weight: 500;
+  }
+  .habit__status[data-tone="over"] {
+    color: var(--color-short);
+  }
+
+  .habit__days {
+    grid-area: days;
+    align-self: end;
+    margin-top: 22px;
+  }
+  .days__grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+  }
+  .days__key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    margin-top: 10px;
+    color: var(--color-muted);
+    font-size: var(--text-tiny);
+    line-height: 1;
+    font-weight: 500;
+  }
+  .days__key li {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .days__key .cell {
+    width: 12px;
+  }
+  .days__key .cell[data-rings] {
+    --c: 2px;
+    --p: 2px;
+  }
+  .days__weekday {
+    color: var(--color-muted);
+    font-size: var(--text-tiny);
+    line-height: 1;
+    font-weight: 500;
+    text-align: center;
+    padding-bottom: 4px;
+  }
+  .cell {
+    aspect-ratio: 1;
+    border-radius: 22%;
+  }
+  /* Untracked and future days keep their place on the sheet as a dot. */
+  .cell[data-state="before"],
+  .cell[data-state="future"] {
+    background: radial-gradient(circle, var(--color-etch) 1.5px, transparent 2px);
+  }
+  .cell[data-state="met"]:not([data-rings]) {
+    background: var(--trace);
+  }
+  /* A day drawn as a small coil: rings wind out from the centre, one per third of the
+     target used, inside the etch die-cut edge. --c is the centre, --p the pitch. */
+  .cell[data-rings] {
+    --c: 3px;
+    --p: 2.75px;
+    position: relative;
+    box-shadow: inset 0 0 0 1px var(--color-etch);
+  }
+  .cell[data-rings]::before {
+    content: "";
+    position: absolute;
+    inset: calc(50% - var(--c) / 2);
+    border-radius: 30%;
+    box-shadow: 0 0 0 1.5px var(--trace);
+  }
+  .cell[data-rings="2"]::before {
+    box-shadow:
+      0 0 0 1.5px var(--trace),
+      0 0 0 var(--p) var(--color-ground),
+      0 0 0 calc(var(--p) + 1.5px) var(--trace);
+  }
+  .cell[data-rings="3"]::before {
+    box-shadow:
+      0 0 0 1.5px var(--trace),
+      0 0 0 var(--p) var(--color-ground),
+      0 0 0 calc(var(--p) + 1.5px) var(--trace),
+      0 0 0 calc(var(--p) * 2) var(--color-ground),
+      0 0 0 calc(var(--p) * 2 + 1.5px) var(--trace);
+  }
+  .cell[data-state="missed"] {
+    box-shadow: inset 0 0 0 1px var(--color-etch);
+  }
+  /* A passed limit gets a cut through it, so it doesn't rely on colour alone. */
+  .cell[data-state="over"] {
+    background:
+      linear-gradient(to top right, transparent calc(50% - 0.8px), var(--color-ground) 0 calc(50% + 0.8px), transparent 0),
+      var(--color-short);
+  }
+  .cell[data-today] {
+    outline: 1.5px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+
+  .habit__coil {
+    grid-area: coil;
+    align-self: center;
+    margin-top: 10px;
+  }
+
+  @media (width >= 68.75rem) {
+    /* One column per habit, like stickers side by side on a sheet: all of them in one screen. */
+    .habits {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
+      border-top: 1px solid var(--color-etch);
+    }
+    .habit {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: none;
+      grid-template-areas:
+        "name streak"
+        "coil coil"
+        "today today"
+        "days days";
+      align-content: start;
+      padding: 24px var(--gutter) 32px;
+      border-top: 0;
+    }
+    .habit:first-child {
+      padding-left: 0;
+    }
+    .habit:last-child {
+      padding-right: 0;
+    }
+    .habit + .habit {
+      border-left: 1px solid var(--color-etch);
+    }
+    .habit__today {
+      margin-top: 28px;
+    }
+    .habit__days {
+      align-self: start;
+      max-width: 16rem;
+      margin-top: 24px;
+    }
+    .days__grid {
+      gap: 6px;
+    }
+    .days__grid .cell[data-rings] {
+      --c: 5px;
+      --p: 4.25px;
+    }
+    .habit__coil {
+      justify-self: center;
+      width: 100%;
+      max-width: 17.5rem;
+      margin-top: 8px;
+    }
+    /* The footer sits on the habits' columns, so the sheet ends on its own grid. */
+    .colophon {
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
+    }
+    .colophon p + p {
+      padding-left: var(--gutter);
+    }
+  }
+
+  /* The coil. Stroke widths come from the geometry (--w lit, --w0 unlit) in viewBox units. */
+  .coil {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 22%;
+    cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .coil[aria-disabled] {
+    cursor: progress;
+  }
+  .coil__svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    transition: scale 0.15s var(--ease-soft);
+  }
+  .coil.is-charging .coil__svg {
+    scale: 0.97;
+  }
+  .coil__edge {
+    fill: none;
+    stroke: var(--color-etch);
+    stroke-width: 0.6;
+  }
+  .coil__svg[data-edge="trace"] .coil__edge {
+    stroke: var(--trace);
+    stroke-width: 0.9;
+  }
+  .coil__svg[data-edge="ink"] .coil__edge {
+    stroke: var(--color-ink);
+    stroke-width: 0.9;
+  }
+  .coil__svg[data-edge="short"] .coil__edge {
+    stroke: var(--color-short);
+    stroke-width: 0.9;
+  }
+  .coil__turn,
+  .coil__lead,
+  .coil__bridge,
+  .coil__insulation,
+  .coil__glint,
+  .coil__pulse {
+    fill: none;
+    stroke-linejoin: round;
+  }
+  .coil__svg {
+    --spill: var(--trace);
+  }
+  .coil__svg[data-spill="short"] {
+    --spill: var(--color-short);
+  }
+  .coil__turn {
+    --tone: var(--trace);
+    stroke: var(--color-etch);
+    stroke-width: var(--w0);
+    stroke-linecap: round;
+  }
+  .coil__turn[data-spill] {
+    --tone: var(--spill);
+  }
+  .coil__turn[data-lit] {
+    stroke: var(--tone);
+    stroke-width: var(--w);
+  }
+  .coil__turn[data-heavy] {
+    stroke-width: calc(var(--w) * 1.8);
+  }
+  /* The turn past the target only exists as the hover preview. */
+  .coil__turn[data-spill]:not([data-lit]) {
+    visibility: hidden;
+  }
+  .coil__lead,
+  .coil__bridge {
+    stroke: var(--color-etch);
+    stroke-width: 1.2;
+    stroke-linecap: round;
+  }
+  .coil__bridge {
+    stroke-width: 2.2;
+  }
+  .coil__lead[data-lit],
+  .coil__bridge[data-lit] {
+    stroke: var(--trace);
+  }
+  /* The bridge crosses the turns on the far side of the film: a gap of ground under it. */
+  .coil__insulation {
+    stroke: var(--color-ground);
+    stroke-width: 4.2;
+  }
+  .coil__chip {
+    fill: var(--color-ground);
+    stroke: var(--color-ink);
+    stroke-width: 1;
+  }
+  .coil__chip[data-lit] {
+    fill: var(--trace);
+    stroke: var(--trace);
+  }
+  /* Butt caps: at rest the dash is zero-length and draws nothing until GSAP moves it. */
+  .coil__glint,
+  .coil__pulse {
+    stroke: var(--glint);
+    stroke-width: calc(var(--w) * 1.15);
+    stroke-dasharray: 0 2;
+  }
+  .coil__glint {
+    stroke-width: calc(var(--w) * 1.4);
+  }
+
+  .coil__field,
+  .coil__ring {
+    position: absolute;
+    inset: 12%;
+    border: 1.5px solid var(--trace);
+    border-radius: 22%;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .coil__field {
+    scale: 1.3;
+    transition:
+      scale 0.35s var(--ease-soft),
+      opacity 0.35s var(--ease-soft);
+  }
+  .coil:focus-visible .coil__turn[data-next] {
+    visibility: visible;
+    stroke: var(--tone);
+    stroke-width: var(--w);
+    opacity: 0.35;
+  }
+  @media (hover: hover) {
+    .coil:hover .coil__field {
+      opacity: 0.5;
+      scale: 1.12;
+    }
+    .coil:hover .coil__turn[data-next] {
+      visibility: visible;
+      stroke: var(--tone);
+      stroke-width: var(--w);
+      opacity: 0.35;
+    }
+  }
+  /* Keyboard focus is the field ring itself, in ink: a box outline round the spill room
+     would cut through the caption under the coil. */
+  .coil:focus-visible {
+    outline: none;
+  }
+  .coil:focus-visible .coil__field {
+    opacity: 1;
+    scale: 1.12;
+    border: 2px solid var(--color-ink);
+  }
+  .coil.is-charging .coil__field {
+    opacity: 1;
+    scale: 1;
+    transition-duration: 0.45s;
+    transition-timing-function: linear;
+  }
+
+  /* Pulled up into the coil's spill room so it reads as the coil's caption, and positioned
+     so it paints above the resting field ring, which overhangs the box. */
+  .coil__hint {
+    position: relative;
+    margin-top: calc(10px - 6%);
+    color: var(--color-muted);
+    font-size: var(--text-tiny);
+    line-height: var(--text-tiny--line-height);
+    font-weight: 500;
+    text-align: center;
+  }
+  .coil__hint[data-failed] {
+    color: var(--color-short);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .trace,
+    .coil__svg,
+    .coil__field {
+      transition: none;
+    }
+  }
+}

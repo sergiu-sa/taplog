@@ -24,11 +24,32 @@ export function habitStatus(kind: Kind, count: number, target: number): { tone: 
   return { tone: "over", label: `${count - target} over your limit` };
 }
 
+export type DayState = "future" | "before" | "met" | "partial" | "missed" | "over";
+
+// `first` is the first logged day: days before it weren't tracked, so they're not misses.
+export function dayState(kind: Kind, target: number, count: number, day: string, today: string, first?: string): DayState {
+  if (day > today) return "future";
+  if (!first || day < first) return "before";
+  if (onTrack(kind, count, target)) return "met";
+  if (kind === "limit") return "over";
+  return count > 0 ? "partial" : "missed";
+}
+
 // en-CA formats as YYYY-MM-DD, the same shape as daily_counts.day.
 const osloDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Oslo" });
 
 export function osloDay(date: Date | string | number) {
   return osloDate.format(new Date(date));
+}
+
+// The day is already Oslo's, so it's read at noon UTC and printed in UTC to stay on it.
+const dayFormats = {
+  short: new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }),
+  long: new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }),
+};
+
+export function formatDay(day: string, style: keyof typeof dayFormats = "short") {
+  return dayFormats[style].format(new Date(`${day}T12:00:00Z`));
 }
 
 // Calendar arithmetic on YYYY-MM-DD. UTC here only avoids DST; the day is already Oslo's.
@@ -38,29 +59,25 @@ export function addDays(day: string, n: number) {
   return d.toISOString().slice(0, 10);
 }
 
-// Consecutive on-track days ending today. A day with no logs counts as 0, which
-// fails a goal and passes a limit, so `first` (the first logged day) stops a limit
-// streak from reaching back before tracking began. An unfinished goal day doesn't
-// end a streak; a limit already over target today has.
-export function streak(
-  kind: Kind,
-  target: number,
-  counts: Map<string, number>,
-  today: string,
-  first: string | undefined,
-) {
-  if (!first) return 0;
-  let day = today;
-  if (!onTrack(kind, counts.get(day) ?? 0, target)) {
-    if (kind === "limit") return 0;
-    day = addDays(day, -1);
-  }
+// Consecutive on-track days ending yesterday, back to `first` (the first logged day).
+// A day with no logs counts as 0, which fails a goal and passes a limit, so `first`
+// stops a limit streak from reaching back before tracking began.
+export function runBefore(kind: Kind, target: number, counts: Map<string, number>, today: string, first: string | undefined) {
   let n = 0;
-  while (day >= first && onTrack(kind, counts.get(day) ?? 0, target)) {
-    n++;
-    day = addDays(day, -1);
-  }
+  if (!first) return n;
+  for (let day = addDays(today, -1); day >= first && onTrack(kind, counts.get(day) ?? 0, target); day = addDays(day, -1)) n++;
   return n;
+}
+
+export function streak(kind: Kind, target: number, counts: Map<string, number>, today: string, first: string | undefined) {
+  return first ? todayStreak(kind, target, counts.get(today) ?? 0, runBefore(kind, target, counts, today, first)) : 0;
+}
+
+// Today's streak from the run that ended yesterday, so the client can recount after a tap.
+// An unfinished goal day doesn't end a streak; a limit already over target today has.
+export function todayStreak(kind: Kind, target: number, count: number, before: number) {
+  if (onTrack(kind, count, target)) return before + 1;
+  return kind === "goal" ? before : 0;
 }
 
 export function formatGap(ms: number) {
