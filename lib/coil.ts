@@ -45,7 +45,6 @@ export function coil(kind: Kind, target: number, count: number) {
   const turns: Turn[] = insets.map((a, i) => ({ d: turnPath(a, ends[i]), lit: i < count, spill: i >= target }));
 
   const met = onTrack(kind, count, target);
-  const outerEnd = ends[shown - 1];
   const lastLit = Math.min(count, turns.length);
   return {
     turns,
@@ -65,7 +64,8 @@ export function coil(kind: Kind, target: number, count: number) {
     // Past the target is fine for a goal and a broken limit for a limit.
     spill: (kind === "goal" ? "trace" : "short") as Exclude<Edge, "etch" | "ink">,
     edgePath: `M${EDGE + EDGE_R} ${EDGE}H${100 - EDGE - EDGE_R}A${EDGE_R} ${EDGE_R} 0 0 1 ${100 - EDGE} ${EDGE + EDGE_R}V${100 - EDGE - EDGE_R}A${EDGE_R} ${EDGE_R} 0 0 1 ${100 - EDGE - EDGE_R} ${100 - EDGE}H${EDGE + EDGE_R}A${EDGE_R} ${EDGE_R} 0 0 1 ${EDGE} ${100 - EDGE - EDGE_R}V${EDGE + EDGE_R}A${EDGE_R} ${EDGE_R} 0 0 1 ${EDGE + EDGE_R} ${EDGE}Z`,
-    lead: `M${CHIP} ${JOG_Y}H${insets[0]}`,
-    bridge: `M${outerEnd} ${JOG_Y}V${BRIDGE_Y}H${CHIP}`,
+    // A target of 0 with nothing logged draws no turns, so nothing connects to the chip.
+    lead: shown ? `M${CHIP} ${JOG_Y}H${insets[0]}` : "",
+    bridge: shown ? `M${ends[shown - 1]} ${JOG_Y}V${BRIDGE_Y}H${CHIP}` : "",
   };
 }

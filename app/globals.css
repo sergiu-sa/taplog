@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Tokens from DESIGN.md. Colours follow prefers-color-scheme through light-dark(). */
+/* Colours follow prefers-color-scheme through light-dark(). */
 @theme {
   --color-ground: light-dark(#f3f4f1, #0d0e0d);
   --color-ink: light-dark(#111311, #e9ebe7);

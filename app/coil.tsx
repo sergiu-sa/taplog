@@ -29,9 +29,13 @@ export function Coil({ kind, target, count, ref }: { kind: Kind; target: number;
           data-heavy={(c.heavy && i === c.turns.length - 1) || undefined}
         />
       ))}
-      <path className="coil__lead" d={c.lead} data-lit={c.chip || undefined} />
-      <path className="coil__insulation" d={c.bridge} />
-      <path className="coil__bridge" d={c.bridge} data-lit={c.chip || undefined} />
+      {c.bridge && (
+        <>
+          <path className="coil__lead" d={c.lead} data-lit={c.chip || undefined} />
+          <path className="coil__insulation" d={c.bridge} />
+          <path className="coil__bridge" d={c.bridge} data-lit={c.chip || undefined} />
+        </>
+      )}
       <rect className="coil__chip" x="43" y="43" width="14" height="14" rx="2.5" data-lit={c.chip || undefined} />
       {c.current && (
         <>

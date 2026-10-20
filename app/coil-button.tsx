@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
 import type { Kind } from "@/lib/habits";
 import { ease, gsap, reducedMotion, useMotion, whileVisible } from "@/lib/motion";
 import { Coil } from "./coil";
@@ -34,6 +34,7 @@ export function CoilButton({
   const root = useRef<HTMLButtonElement>(null);
   const timer = useRef<gsap.core.Tween | null>(null);
   const [charging, setCharging] = useState(false);
+  const hintId = useId();
 
   function start(e: PointerEvent) {
     if (!e.isPrimary || e.button !== 0 || busy) return;
@@ -44,6 +45,9 @@ export function CoilButton({
       onFire();
     });
   }
+
+  // A hold still running when the row goes away must not log.
+  useEffect(() => () => void timer.current?.kill(), []);
 
   function stop() {
     if (!timer.current) return;
@@ -111,7 +115,8 @@ export function CoilButton({
         type="button"
         className={charging ? "coil is-charging" : "coil"}
         aria-label={label}
-        aria-describedby={describedBy}
+        // The hint too, so a screen reader says to hold (VoiceOver: double-tap and hold).
+        aria-describedby={`${describedBy} ${hintId}`}
         aria-disabled={busy || undefined}
         onPointerDown={start}
         onPointerUp={stop}
@@ -121,13 +126,17 @@ export function CoilButton({
           // detail 0: keyboard or assistive tech. A pointer's click comes after the hold.
           if (e.detail === 0 && !busy) onFire();
         }}
+        // A held Enter repeats its click; only the first press counts.
+        onKeyDown={(e) => {
+          if (e.repeat) e.preventDefault();
+        }}
         onContextMenu={(e) => e.preventDefault()}
       >
         <span className="coil__field" aria-hidden="true" />
         <span className="coil__ring" aria-hidden="true" />
         <Coil kind={kind} target={target} count={count} />
       </button>
-      <p className="coil__hint" data-failed={failed || undefined}>
+      <p id={hintId} className="coil__hint" data-failed={failed || undefined}>
         {failed ? "Didn't save. Try again." : charging ? "Keep holding" : "Hold to add"}
       </p>
     </div>

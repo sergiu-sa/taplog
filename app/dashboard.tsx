@@ -1,18 +1,14 @@
 import Link from "next/link";
 import { addDays, formatDay, runBefore, type Kind } from "@/lib/habits";
+import type { Tables } from "@/lib/supabase/types";
 import { HabitRow, type HabitView } from "./habit-row";
 
 const WEEKS = 5;
 
 // The shape the dashboard query returns. Fixtures use it too, so the preview goes
 // through the same conversion as real data.
-export type HabitRecord = {
-  slug: string;
-  name: string;
-  kind: string;
-  daily_target: number;
-  color: string;
-  daily_counts: { day: string | null; count: number | null }[];
+export type HabitRecord = Pick<Tables<"habits">, "slug" | "name" | "kind" | "daily_target" | "color"> & {
+  daily_counts: Pick<Tables<"daily_counts">, "day" | "count">[];
 };
 
 export function toHabitView(h: HabitRecord, today: string): HabitView {
