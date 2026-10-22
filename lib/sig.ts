@@ -1,13 +1,13 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-// Not LOG_SECRET: that one is printed on every sticker. Throwing on import fails
-// the build when it's unset, so a deploy can never log a tap it can't sign.
+// Throwing on import fails the build when it's unset, so a deploy can never log a
+// tap it can't sign.
 if (!process.env.SIG_SECRET) throw new Error("SIG_SECRET is not set");
 const key = process.env.SIG_SECRET;
 
 // Log ids are sequential, so /logged?id=N alone would let anyone read counts or
-// undo recent taps by guessing N. The signature proves /log issued that id.
+// undo recent taps by guessing N. The signature proves /t issued that id.
 export function signId(id: string | number) {
   return createHmac("sha256", key)
     .update(String(id))

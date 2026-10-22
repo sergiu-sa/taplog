@@ -19,57 +19,108 @@ export type Database = {
           color: string
           created_at: string
           daily_target: number
+          id: number
           kind: string
           name: string
-          slug: string
+          user_id: string
         }
         Insert: {
           color?: string
           created_at?: string
           daily_target: number
+          id?: never
           kind: string
           name: string
-          slug: string
+          user_id?: string
         }
         Update: {
           color?: string
           created_at?: string
           daily_target?: number
+          id?: never
           kind?: string
           name?: string
-          slug?: string
+          user_id?: string
         }
         Relationships: []
       }
       logs: {
         Row: {
           created_at: string
-          habit_slug: string
+          habit_id: number
           id: number
           source: string
-          tag_uid: string | null
+          sticker_id: number | null
+          user_id: string
         }
         Insert: {
           created_at?: string
-          habit_slug: string
+          habit_id: number
           id?: never
           source?: string
-          tag_uid?: string | null
+          sticker_id?: number | null
+          user_id?: string
         }
         Update: {
           created_at?: string
-          habit_slug?: string
+          habit_id?: number
           id?: never
           source?: string
-          tag_uid?: string | null
+          sticker_id?: number | null
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "logs_habit_slug_fkey"
-            columns: ["habit_slug"]
+            foreignKeyName: "logs_habit_id_fkey"
+            columns: ["habit_id"]
             isOneToOne: false
             referencedRelation: "habits"
-            referencedColumns: ["slug"]
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logs_sticker_id_fkey"
+            columns: ["sticker_id"]
+            isOneToOne: false
+            referencedRelation: "stickers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stickers: {
+        Row: {
+          created_at: string
+          habit_id: number | null
+          id: number
+          label: string
+          last_tap_at: string | null
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          habit_id?: number | null
+          id?: never
+          label: string
+          last_tap_at?: string | null
+          token_hash: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          habit_id?: number | null
+          id?: never
+          label?: string
+          last_tap_at?: string | null
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stickers_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -79,21 +130,31 @@ export type Database = {
         Row: {
           count: number | null
           day: string | null
-          habit_slug: string | null
+          habit_id: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "logs_habit_slug_fkey"
-            columns: ["habit_slug"]
+            foreignKeyName: "logs_habit_id_fkey"
+            columns: ["habit_id"]
             isOneToOne: false
             referencedRelation: "habits"
-            referencedColumns: ["slug"]
+            referencedColumns: ["id"]
           },
         ]
       }
     }
     Functions: {
-      [_ in never]: never
+      new_sticker: {
+        Args: { habit_id: number; label: string }
+        Returns: string
+      }
+      tap: {
+        Args: { hash: string }
+        Returns: {
+          dup: boolean
+          log_id: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

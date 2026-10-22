@@ -15,9 +15,9 @@ function series(from: string, f: (i: number, day: string) => number) {
   return rows;
 }
 
-const habit = (slug: string, kind: string, daily_target: number, color: string, daily_counts: HabitRecord["daily_counts"]) => ({
-  slug,
-  name: slug[0].toUpperCase() + slug.slice(1),
+const habit = (id: number, name: string, kind: string, daily_target: number, color: string, daily_counts: HabitRecord["daily_counts"]) => ({
+  id,
+  name,
   kind,
   daily_target,
   color,
@@ -25,21 +25,21 @@ const habit = (slug: string, kind: string, daily_target: number, color: string, 
 });
 
 const water = (todayCount: number) =>
-  habit("water", "goal", 8, "#3B82F6", series("2026-09-10", (i, d) =>
+  habit(1, "Water", "goal", 8, "#3B82F6", series("2026-09-10", (i, d) =>
     d === today ? todayCount : d >= "2026-10-09" ? 8 + (wave(i, 1) % 3) : 4 + wave(i, 2) + (i % 3 === 0 ? 2 : 0),
   ));
 
 export const fixtures: Record<string, HabitRecord[]> = {
   // A goal met, a running streak with today unfinished, a limit over target.
   dashboard: [
-    habit("move", "goal", 1, "#22C55E", series("2026-09-28", (i, d) => (d === today || i % 6 !== 3 ? 1 : 0))),
-    habit("smokes", "limit", 10, "#F97316", series("2026-09-10", (i, d) => (d === today ? 12 : 6 + wave(i, 0) + (i % 7 === 2 ? 3 : 0)))),
+    habit(3, "Move", "goal", 1, "#22C55E", series("2026-09-28", (i, d) => (d === today || i % 6 !== 3 ? 1 : 0))),
+    habit(2, "Smokes", "limit", 10, "#F97316", series("2026-09-10", (i, d) => (d === today ? 12 : 6 + wave(i, 0) + (i % 7 === 2 ? 3 : 0)))),
     water(5),
   ],
   // Early in the day: a habit with nothing logged yet, a limit exactly at target, a goal at 0.
   morning: [
-    habit("move", "goal", 1, "#22C55E", []),
-    habit("smokes", "limit", 10, "#F97316", series("2026-09-10", (i, d) => (d === today ? 10 : 5 + wave(i, 3)))),
+    habit(3, "Move", "goal", 1, "#22C55E", []),
+    habit(2, "Smokes", "limit", 10, "#F97316", series("2026-09-10", (i, d) => (d === today ? 10 : 5 + wave(i, 3)))),
     water(0),
   ],
 };

@@ -7,7 +7,7 @@ const WEEKS = 5;
 
 // The shape the dashboard query returns. Fixtures use it too, so the preview goes
 // through the same conversion as real data.
-export type HabitRecord = Pick<Tables<"habits">, "slug" | "name" | "kind" | "daily_target" | "color"> & {
+export type HabitRecord = Pick<Tables<"habits">, "id" | "name" | "kind" | "daily_target" | "color"> & {
   daily_counts: Pick<Tables<"daily_counts">, "day" | "count">[];
 };
 
@@ -18,7 +18,7 @@ export function toHabitView(h: HabitRecord, today: string): HabitView {
   const first = [...counts.keys()].sort()[0];
   const monday = addDays(today, -((new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7));
   return {
-    slug: h.slug,
+    id: h.id,
     name: h.name,
     kind,
     target: h.daily_target,
@@ -40,7 +40,7 @@ export function Dashboard({
 }: {
   today: string;
   habits: HabitView[];
-  add: (slug: string) => Promise<void>;
+  add: (habitId: number) => Promise<void>;
 }) {
   return (
     <div className="page">
@@ -58,7 +58,7 @@ export function Dashboard({
         <h1 className="title">Today</h1>
         <div className="habits">
           {habits.map((h, i) => (
-            <HabitRow key={h.slug} habit={h} today={today} index={i} add={add} />
+            <HabitRow key={h.id} habit={h} today={today} index={i} add={add} />
           ))}
         </div>
       </main>

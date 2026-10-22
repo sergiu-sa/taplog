@@ -33,5 +33,5 @@ export async function proxy(request: NextRequest) {
 }
 
 // Only the dashboard (and its Server Actions, which POST to it) reads the session.
-// Taps on /log and /logged never pay for this.
+// Taps on /t and /logged never pay for this.
 export const config = { matcher: "/" };

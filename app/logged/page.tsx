@@ -35,12 +35,12 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
 
   const { data: log } = await supabaseAdmin
     .from("logs")
-    .select("created_at, habit_slug, habits(name, kind, daily_target, color)")
+    .select("created_at, habit_id, habits(name, kind, daily_target, color)")
     .eq("id", Number(id))
     .maybeSingle()
     .throwOnError();
 
-  // A valid signature means /log created this row, so if it's gone it was deleted.
+  // A valid signature means /t created this row, so if it's gone it was deleted.
   if (!log) {
     return (
       <main id="main" className="mx-auto flex min-h-dvh max-w-sm flex-col px-6 pt-16">
@@ -59,7 +59,7 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
     supabaseAdmin
       .from("daily_counts")
       .select("count")
-      .eq("habit_slug", log.habit_slug)
+      .eq("habit_id", log.habit_id)
       .eq("day", day)
       .maybeSingle()
       .throwOnError(),
@@ -67,7 +67,7 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
       ? supabaseAdmin
           .from("logs")
           .select("created_at")
-          .eq("habit_slug", log.habit_slug)
+          .eq("habit_id", log.habit_id)
           .lt("created_at", log.created_at)
           .order("created_at", { ascending: false })
           .limit(1)
