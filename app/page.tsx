@@ -8,14 +8,15 @@ import { Dashboard, toHabitView } from "./dashboard";
 export const metadata: Metadata = { title: "Today" };
 
 // A Server Action is its own POST endpoint, so the page's auth check doesn't cover it.
-async function addLog(habit: string) {
+async function addLog(habitId: number) {
   "use server";
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   if (!data) redirect("/login");
 
-  if (typeof habit !== "string") return;
-  await supabase.from("logs").insert({ habit_slug: habit, source: "manual" }).throwOnError();
+  // The argument arrives from the client as whatever it sent, not the declared type.
+  if (!Number.isSafeInteger(habitId)) return;
+  await supabase.from("logs").insert({ habit_id: habitId, source: "manual" }).throwOnError();
   refresh();
 }
 
@@ -28,7 +29,7 @@ export default async function Page() {
   // (1000 by default); move streaks into SQL before a habit has years of days.
   const { data: habits } = await supabase
     .from("habits")
-    .select("slug, name, kind, daily_target, color, daily_counts(day, count)")
+    .select("id, name, kind, daily_target, color, daily_counts(day, count)")
     .order("name")
     .throwOnError();
 

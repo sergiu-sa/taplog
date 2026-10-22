@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.18"
-  }
   public: {
     Tables: {
       habits: {
@@ -19,57 +14,108 @@ export type Database = {
           color: string
           created_at: string
           daily_target: number
+          id: number
           kind: string
           name: string
-          slug: string
+          user_id: string
         }
         Insert: {
           color?: string
           created_at?: string
           daily_target: number
+          id?: never
           kind: string
           name: string
-          slug: string
+          user_id?: string
         }
         Update: {
           color?: string
           created_at?: string
           daily_target?: number
+          id?: never
           kind?: string
           name?: string
-          slug?: string
+          user_id?: string
         }
         Relationships: []
       }
       logs: {
         Row: {
           created_at: string
-          habit_slug: string
+          habit_id: number
           id: number
           source: string
-          tag_uid: string | null
+          sticker_id: number | null
+          user_id: string
         }
         Insert: {
           created_at?: string
-          habit_slug: string
+          habit_id: number
           id?: never
           source?: string
-          tag_uid?: string | null
+          sticker_id?: number | null
+          user_id?: string
         }
         Update: {
           created_at?: string
-          habit_slug?: string
+          habit_id?: number
           id?: never
           source?: string
-          tag_uid?: string | null
+          sticker_id?: number | null
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "logs_habit_slug_fkey"
-            columns: ["habit_slug"]
+            foreignKeyName: "logs_habit_id_fkey"
+            columns: ["habit_id"]
             isOneToOne: false
             referencedRelation: "habits"
-            referencedColumns: ["slug"]
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logs_sticker_id_fkey"
+            columns: ["sticker_id"]
+            isOneToOne: false
+            referencedRelation: "stickers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stickers: {
+        Row: {
+          created_at: string
+          habit_id: number | null
+          id: number
+          label: string
+          last_tap_at: string | null
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          habit_id?: number | null
+          id?: never
+          label: string
+          last_tap_at?: string | null
+          token_hash: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          habit_id?: number | null
+          id?: never
+          label?: string
+          last_tap_at?: string | null
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stickers_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -79,21 +125,31 @@ export type Database = {
         Row: {
           count: number | null
           day: string | null
-          habit_slug: string | null
+          habit_id: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "logs_habit_slug_fkey"
-            columns: ["habit_slug"]
+            foreignKeyName: "logs_habit_id_fkey"
+            columns: ["habit_id"]
             isOneToOne: false
             referencedRelation: "habits"
-            referencedColumns: ["slug"]
+            referencedColumns: ["id"]
           },
         ]
       }
     }
     Functions: {
-      [_ in never]: never
+      new_sticker: {
+        Args: { habit_id: number; label: string }
+        Returns: string
+      }
+      tap: {
+        Args: { hash: string }
+        Returns: {
+          dup: boolean
+          log_id: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
@@ -112,12 +168,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -141,11 +197,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -166,11 +222,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -191,11 +247,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -208,11 +264,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -226,3 +282,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

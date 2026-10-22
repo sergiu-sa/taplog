@@ -6,7 +6,7 @@ import { ease, gsap, useMotion } from "@/lib/motion";
 import { CoilButton } from "./coil-button";
 
 export type HabitView = {
-  slug: string;
+  id: number;
   name: string;
   kind: Kind;
   target: number;
@@ -41,9 +41,9 @@ export function HabitRow({
   habit: HabitView;
   today: string;
   index: number;
-  add: (slug: string) => Promise<void>;
+  add: (habitId: number) => Promise<void>;
 }) {
-  const { slug, name, kind, target } = habit;
+  const { id, name, kind, target } = habit;
   const [count, addOne] = useOptimistic(habit.count, (c, n: number) => c + n);
   const [pending, startTransition] = useTransition();
   const [failed, setFailed] = useState(false);
@@ -80,7 +80,7 @@ export function HabitRow({
     startTransition(async () => {
       addOne(1);
       try {
-        await add(slug);
+        await add(id);
       } catch {
         setFailed(true);
         setSaid("Didn't save. Try again.");
@@ -104,8 +104,8 @@ export function HabitRow({
   );
 
   return (
-    <section ref={row} className="habit" aria-labelledby={`${slug}-name`} style={{ "--habit": habit.color } as CSSProperties}>
-      <h2 id={`${slug}-name`} className="habit__name">
+    <section ref={row} className="habit" aria-labelledby={`habit-${id}-name`} style={{ "--habit": habit.color } as CSSProperties}>
+      <h2 id={`habit-${id}-name`} className="habit__name">
         {name}
       </h2>
 
@@ -119,7 +119,7 @@ export function HabitRow({
               : "No streak"}
       </p>
 
-      <div className="habit__today" id={`${slug}-today`}>
+      <div className="habit__today" id={`habit-${id}-today`}>
         <p className="count">
           <span className="count__n">{count}</span>
           <span className="count__of">/{target}</span>
@@ -170,7 +170,7 @@ export function HabitRow({
         busy={pending}
         failed={failed}
         delay={index * 0.06}
-        describedBy={`${slug}-today`}
+        describedBy={`habit-${id}-today`}
         onFire={fire}
       />
 
