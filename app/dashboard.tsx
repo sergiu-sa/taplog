@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { addDays, formatDay, runBefore, type Kind } from "@/lib/habits";
+import { addDays, formatDay, runBefore, targetOn, type Kind } from "@/lib/habits";
 import type { Tables } from "@/lib/supabase/types";
 import { HabitRow, type HabitView } from "./habit-row";
 
@@ -7,8 +7,9 @@ const WEEKS = 5;
 
 // The shape the dashboard query returns. Fixtures use it too, so the preview goes
 // through the same conversion as real data.
-export type HabitRecord = Pick<Tables<"habits">, "id" | "name" | "kind" | "daily_target" | "color"> & {
+export type HabitRecord = Pick<Tables<"habits">, "id" | "name" | "kind" | "color"> & {
   daily_counts: Pick<Tables<"daily_counts">, "day" | "count">[];
+  habit_targets: Pick<Tables<"habit_targets">, "from_day" | "target">[];
 };
 
 export function toHabitView(h: HabitRecord, today: string): HabitView {
@@ -21,14 +22,14 @@ export function toHabitView(h: HabitRecord, today: string): HabitView {
     id: h.id,
     name: h.name,
     kind,
-    target: h.daily_target,
+    target: targetOn(h.habit_targets, today),
     color: h.color,
     count: counts.get(today) ?? 0,
-    before: runBefore(kind, h.daily_target, counts, today, first),
+    before: runBefore(kind, h.habit_targets, counts, today, first),
     first,
     days: Array.from({ length: WEEKS * 7 }, (_, i) => {
       const day = addDays(monday, i - 7 * (WEEKS - 1));
-      return { day, count: counts.get(day) ?? 0 };
+      return { day, count: counts.get(day) ?? 0, target: targetOn(h.habit_targets, day) };
     }),
   };
 }

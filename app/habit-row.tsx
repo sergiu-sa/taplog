@@ -14,7 +14,7 @@ export type HabitView = {
   count: number;
   before: number; // the streak that ended yesterday
   first?: string;
-  days: { day: string; count: number }[];
+  days: { day: string; count: number; target: number }[];
 };
 
 // Rings: how much of the target a day used, in thirds, drawn like turns of the coil.
@@ -55,16 +55,17 @@ export function HabitRow({
   const status = habitStatus(kind, count, target);
   const first = habit.first ?? (count > 0 ? today : undefined);
   const streak = first ? todayStreak(kind, target, count, habit.before) : 0;
-  const cells = habit.days.map(({ day, count: c }) => {
+  const cells = habit.days.map(({ day, count: c, target: of }) => {
     const n = day === today ? count : c;
-    const state = dayState(kind, target, n, day, today, first);
+    const state = dayState(kind, of, n, day, today, first);
     // A limit day under target shows how much of it went; a day with none looks like a missed goal.
     const under = kind === "limit" && state === "met";
     return {
       day,
       n,
+      of,
       state: under && n === 0 ? ("missed" as const) : state,
-      rings: state === "partial" || (under && n > 0) ? rings(n, target) : undefined,
+      rings: state === "partial" || (under && n > 0) ? rings(n, of) : undefined,
       quiet: state === "future" || state === "before",
     };
   });
@@ -136,7 +137,7 @@ export function HabitRow({
               {d}
             </span>
           ))}
-          {cells.map(({ day, n, state, rings, quiet }) => (
+          {cells.map(({ day, n, of, state, rings, quiet }) => (
             <span
               key={day}
               className="cell"
@@ -145,7 +146,7 @@ export function HabitRow({
               // Ringed because an unfinished goal day isn't a miss yet.
               data-today={day === today || undefined}
               role={quiet ? undefined : "img"}
-              aria-label={quiet ? undefined : `${formatDay(day)}: ${n} of ${target}`}
+              aria-label={quiet ? undefined : `${formatDay(day)}: ${n} of ${of}`}
               aria-hidden={quiet || undefined}
             />
           ))}

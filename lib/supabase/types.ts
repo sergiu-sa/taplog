@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      habit_targets: {
+        Row: {
+          from_day: string
+          habit_id: number
+          target: number
+          user_id: string
+        }
+        Insert: {
+          from_day: string
+          habit_id: number
+          target: number
+          user_id: string
+        }
+        Update: {
+          from_day?: string
+          habit_id?: number
+          target?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_targets_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       habits: {
         Row: {
           color: string
