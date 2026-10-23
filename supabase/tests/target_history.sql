@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(15);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-00000000000a', 'a@test.local'),
@@ -37,6 +37,8 @@ select results_eq(
 );
 update habits set name = 'A water bottle' where id = 9001;
 select is((select count(*)::int from habit_targets where habit_id = 9001), 1, 'a rename writes no target');
+update habits set name = 'A water', daily_target = 8 where id = 9001;
+select is((select count(*)::int from habit_targets where habit_id = 9001), 1, 'nor does saving the same target');
 
 select ok(
   not (has_function_privilege('anon', 'record_target()', 'execute')

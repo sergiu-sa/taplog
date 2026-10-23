@@ -33,6 +33,10 @@ security definer
 set search_path = ''
 as $$
 begin
+  -- update of daily_target fires whenever the column is in the SET list, even unchanged.
+  if tg_op = 'UPDATE' and new.daily_target = old.daily_target then
+    return null;
+  end if;
   insert into public.habit_targets (habit_id, user_id, from_day, target)
   values (new.id, new.user_id, (now() at time zone 'Europe/Oslo')::date, new.daily_target)
   on conflict (habit_id, from_day) do update set target = excluded.target;

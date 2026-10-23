@@ -27,10 +27,11 @@ export function habitStatus(kind: Kind, count: number, target: number): { tone: 
 // A row of habit_targets: the target from that Oslo day until the next row.
 export type Target = { from_day: string; target: number };
 
-// `targets` sorted by from_day. A day before the first row takes its target, because the
-// history only starts when it was first recorded, and taps can be older.
+// A day before the first row takes its target, because the history only starts when it was
+// first recorded, and taps can be older. Sorted here, so no query has to remember to.
 export function targetOn(targets: Target[], day: string) {
-  return (targets.findLast((t) => t.from_day <= day) ?? targets[0]).target;
+  const rows = targets.toSorted((a, b) => (a.from_day < b.from_day ? -1 : 1));
+  return (rows.findLast((t) => t.from_day <= day) ?? rows[0]).target;
 }
 
 export type DayState = "future" | "before" | "met" | "partial" | "missed" | "over";

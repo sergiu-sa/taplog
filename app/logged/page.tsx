@@ -37,7 +37,6 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
     .from("logs")
     .select("created_at, habit_id, habits(name, kind, color, habit_targets(from_day, target))")
     .eq("id", Number(id))
-    .order("from_day", { referencedTable: "habits.habit_targets" })
     .maybeSingle()
     .throwOnError();
 
