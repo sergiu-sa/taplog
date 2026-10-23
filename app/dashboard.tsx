@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { addDays, formatDay, runBefore, targetOn, type Kind } from "@/lib/habits";
+import { addDays, formatDay, runBefore, targetOn, weekStart, type Kind } from "@/lib/habits";
 import type { Tables } from "@/lib/supabase/types";
 import { HabitRow, type HabitView } from "./habit-row";
+import { PageTurn } from "./page-turn";
+import type { Add, Remove } from "./use-tally";
 
 const WEEKS = 5;
 
@@ -17,7 +19,7 @@ export function toHabitView(h: HabitRecord, today: string): HabitView {
   // View columns are typed nullable, but a group by never yields null here.
   const counts = new Map(h.daily_counts.map((r) => [r.day!, r.count!]));
   const first = [...counts.keys()].sort()[0];
-  const monday = addDays(today, -((new Date(`${today}T00:00:00Z`).getUTCDay() + 6) % 7));
+  const monday = weekStart(today);
   return {
     id: h.id,
     name: h.name,
@@ -37,38 +39,44 @@ export function toHabitView(h: HabitRecord, today: string): HabitView {
 export function Dashboard({
   today,
   habits,
+  habitHref = "/h/",
   add,
+  remove,
 }: {
   today: string;
   habits: HabitView[];
-  add: (habitId: number) => Promise<void>;
+  habitHref?: string;
+  add: Add;
+  remove: Remove;
 }) {
   return (
-    <div className="page">
-      <header className="masthead">
-        <Link href="/" prefetch={false} className="trace" aria-current="page">
-          taplog
-        </Link>
-        <time dateTime={today}>
-          <span className="desk:hidden">{formatDay(today)}</span>
-          <span className="hidden desk:inline">{formatDay(today, "long")}</span>
-        </time>
-      </header>
+    <PageTurn>
+      <div className="page">
+        <header className="masthead">
+          <Link href="/" prefetch={false} className="trace" aria-current="page">
+            taplog
+          </Link>
+          <time dateTime={today}>
+            <span className="desk:hidden">{formatDay(today)}</span>
+            <span className="hidden desk:inline">{formatDay(today, "long")}</span>
+          </time>
+        </header>
 
-      <main id="main" tabIndex={-1}>
-        <h1 className="title">Today</h1>
-        <div className="habits">
-          {habits.map((h, i) => (
-            <HabitRow key={h.id} habit={h} today={today} index={i} add={add} />
-          ))}
-        </div>
-      </main>
+        <main id="main" tabIndex={-1}>
+          <h1 className="title">Today</h1>
+          <div className="habits">
+            {habits.map((h, i) => (
+              <HabitRow key={h.id} habit={h} today={today} index={i} href={`${habitHref}${h.id}`} add={add} remove={remove} />
+            ))}
+          </div>
+        </main>
 
-      <footer className="colophon">
-        <p>Every sticker tap winds one more turn. Hold a coil to add one by hand.</p>
-        <p>The outlined day is today. Dots are days before tracking began or still to come.</p>
-        <p>Counts reset at midnight, Oslo time.</p>
-      </footer>
-    </div>
+        <footer className="colophon">
+          <p>Every sticker tap winds one more turn. Hold a coil to add one by hand.</p>
+          <p>The outlined day is today. Dots are days before tracking began or still to come.</p>
+          <p>Counts reset at midnight, Oslo time.</p>
+        </footer>
+      </div>
+    </PageTurn>
   );
 }

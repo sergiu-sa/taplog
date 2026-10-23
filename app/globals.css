@@ -7,6 +7,8 @@
   --color-muted: light-dark(#5d625c, #989d97);
   --color-etch: light-dark(#b3b8b1, #5a5f59);
   --color-short: light-dark(#c2202f, #ff5d52);
+  /* The page transition: ink by day; etch at night, where ink is near-white and would flash. */
+  --color-curtain: light-dark(#111311, #5a5f59);
 
   --font-sans: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
 
@@ -40,6 +42,7 @@
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* expo.out */
   --ease-soft: cubic-bezier(0.215, 0.61, 0.355, 1); /* power3.out */
+  --ease-in-out: cubic-bezier(0.87, 0, 0.13, 1); /* expo.inOut */
 }
 
 @layer base {
@@ -171,10 +174,14 @@
     font-weight: 500;
   }
 
-  /* One habit: count and days on the left, the coil on the right where the thumb is. */
-  .habit {
+  .habit,
+  .detail {
     --trace: light-dark(color-mix(in oklab, var(--habit) 80%, black), var(--habit));
     --glint: color-mix(in oklab, var(--habit) 45%, white);
+  }
+
+  /* One habit: count and days on the left, the coil on the right where the thumb is. */
+  .habit {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
     grid-template-rows: auto auto 1fr;
@@ -192,6 +199,12 @@
     line-height: var(--text-name--line-height);
     letter-spacing: var(--text-name--letter-spacing);
     font-weight: var(--text-name--font-weight);
+  }
+  /* Padded to a thumb's height without moving the row; the trace sits under the descenders. */
+  .habit__name a {
+    display: inline-block;
+    padding-block: 10px 12px;
+    margin-block: -10px -12px;
   }
   .habit__streak {
     grid-area: streak;
@@ -471,6 +484,12 @@
     stroke: var(--tone);
     stroke-width: var(--w);
   }
+  /* Unwinding: drawn lit while its dash drains back to the jog. */
+  .coil__turn[data-unwind] {
+    visibility: visible;
+    stroke: var(--tone);
+    stroke-width: var(--w);
+  }
   .coil__turn[data-heavy] {
     stroke-width: calc(var(--w) * 1.8);
   }
@@ -581,11 +600,558 @@
     color: var(--color-short);
   }
 
+  /* Utility text buttons (Undo, Remove): padded to 44 px without moving the line. */
+  .undo {
+    position: relative;
+    padding: 13px 8px;
+    margin: -13px -8px;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    transition:
+      color 0.35s var(--ease-soft),
+      text-decoration-thickness 0.35s var(--ease-soft);
+  }
+  .undo:disabled,
+  .undo[aria-disabled] {
+    cursor: progress;
+    opacity: 0.5;
+  }
+  @media (hover: hover) {
+    .undo:hover,
+    .tap .undo:hover {
+      color: var(--color-ink);
+      text-decoration-thickness: 2px;
+    }
+  }
+
+  /* Ink text button: a ground-coloured trace runs along its inner bottom edge. */
+  .button {
+    min-width: 5.5rem;
+    height: 44px;
+    padding-inline: 18px;
+    border-radius: 10px;
+    background:
+      linear-gradient(var(--color-ground) 0 0) left 18px bottom 9px / 0 2px no-repeat,
+      var(--color-ink);
+    color: var(--color-ground);
+    font-weight: 650;
+    cursor: pointer;
+    transition:
+      background-size 0.45s var(--ease-out),
+      scale 0.15s var(--ease-soft);
+  }
+  .button:focus-visible {
+    background-size:
+      calc(100% - 36px) 2px,
+      auto;
+  }
+  .button:active {
+    scale: 0.97;
+  }
+  @media (hover: hover) {
+    .button:hover {
+      background-size:
+        calc(100% - 36px) 2px,
+        auto;
+    }
+  }
+
+  /* Habit page: the coil as a poster, then the year, the day and the hours. */
+  .poster {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "coil coil"
+      "name today"
+      "kind today"
+      "facts facts";
+    column-gap: var(--gutter);
+    padding-block: 4px 28px;
+  }
+  .poster .habit__coil {
+    justify-self: center;
+    width: min(16.25rem, 70vw);
+    margin-top: 0;
+  }
+  .poster__name {
+    grid-area: name;
+    margin-top: 18px;
+    padding-bottom: 0;
+  }
+  .poster__kind {
+    grid-area: kind;
+    align-self: end;
+    margin-top: 10px;
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: 500;
+  }
+  .poster__today {
+    grid-area: today;
+    align-self: end;
+    justify-self: end;
+    text-align: right;
+  }
+  .poster__today .count {
+    justify-content: flex-end;
+  }
+  .poster__empty {
+    grid-area: facts;
+    margin-top: 24px;
+    color: var(--color-muted);
+    font-size: var(--text-body);
+  }
+  .facts {
+    grid-area: facts;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: var(--gutter);
+    margin-top: 28px;
+  }
+  .facts div {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 6px;
+  }
+  .facts dd {
+    margin-left: -0.04em;
+    font-size: var(--text-fact);
+    line-height: var(--text-fact--line-height);
+    letter-spacing: var(--text-fact--letter-spacing);
+    font-weight: var(--text-fact--font-weight);
+    /* Side by side, never stacked, so tabular figures only spread a decimal apart. */
+    font-variant-numeric: proportional-nums;
+  }
+  .facts dt {
+    color: var(--color-muted);
+    font-size: var(--text-tiny);
+    line-height: var(--text-tiny--line-height);
+    font-weight: 500;
+  }
+
+  .section__title {
+    font-size: var(--text-name);
+    line-height: var(--text-name--line-height);
+    letter-spacing: var(--text-name--letter-spacing);
+    font-weight: var(--text-name--font-weight);
+  }
+  .year,
+  .day,
+  .hours {
+    padding-block: 18px 28px;
+    border-top: 1px solid var(--color-etch);
+  }
+
+  /* The year scrolls on phones and opens at its end: rtl puts the scroll origin on the right,
+     and the weeks inside read left to right as usual. */
+  .year__scroll {
+    --cell: 14px;
+    --gap: 3px;
+    direction: rtl;
+    overflow-x: auto;
+    margin-inline: calc(-1 * var(--margin));
+    padding: 22px var(--margin) 4px;
+    scroll-padding-inline: var(--margin);
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    /* The weeks run under the screen edge on purpose; the fade says there's more to scroll. */
+    mask-image: linear-gradient(to right, transparent, #000 var(--margin));
+  }
+  .year__scroll:focus-visible {
+    border-radius: 10px;
+    outline-offset: -2px;
+  }
+  .year__weeks {
+    direction: ltr;
+    display: flex;
+    gap: var(--gap);
+    width: max-content;
+  }
+  .year__week {
+    position: relative;
+    display: grid;
+    grid-template-rows: repeat(7, var(--cell));
+    gap: var(--gap);
+    width: var(--cell);
+  }
+  .year__week[data-month] {
+    scroll-snap-align: start;
+  }
+  .year__week:last-child {
+    scroll-snap-align: end;
+  }
+  .year__month {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 0;
+    color: var(--color-muted);
+    font-size: var(--text-tiny);
+    line-height: 1;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .year__week .cell {
+    position: relative;
+    cursor: pointer;
+  }
+  .year__week .cell[data-state="future"] {
+    cursor: default;
+  }
+  .year__week .cell[data-rings] {
+    --c: 2px;
+    --p: 2px;
+  }
+  /* The picked day keeps a trace under it, as the current page does under its link. */
+  .year__week .cell[data-picked]::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 1px);
+    height: 2px;
+    border-radius: 1px;
+    background: var(--color-ink);
+  }
+  @media (hover: hover) {
+    .year__week .cell:not([data-today], [data-state="future"]):hover {
+      outline: 1.5px solid var(--color-etch);
+      outline-offset: 1px;
+    }
+  }
+  .year .days__key {
+    margin-top: 14px;
+  }
+  .year__scroll {
+    margin-top: 6px;
+  }
+
+  .day__nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-block: -6px;
+  }
+  .day__nav h2 {
+    flex: 1;
+  }
+  .day__date {
+    margin-left: 0.5em;
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    letter-spacing: 0;
+    font-weight: 500;
+  }
+  .day__step {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    font-size: 1.875rem;
+    line-height: 1;
+    font-weight: 600;
+  }
+  .day__step.trace {
+    background-position:
+      center bottom 9px,
+      center bottom 9px;
+  }
+  .day__step.trace:focus-visible {
+    background-size:
+      14px 2px,
+      var(--rest) 1px;
+  }
+  @media (hover: hover) {
+    .day__step.trace:hover {
+      background-size:
+        14px 2px,
+        var(--rest) 1px;
+    }
+  }
+  .day__step[aria-disabled] {
+    color: var(--color-etch);
+  }
+  .day__count {
+    margin-top: 2px;
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .taps {
+    margin-top: 10px;
+  }
+  .tap {
+    display: grid;
+    grid-template-columns: 4rem minmax(0, 1fr) auto;
+    align-items: center;
+    min-height: 44px;
+    font-size: var(--text-body);
+  }
+  .tap__time {
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+  .tap__source {
+    overflow: hidden;
+    color: var(--color-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tap .undo {
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+  }
+  .tap[data-gone] {
+    display: flex;
+    color: var(--color-muted);
+  }
+  .tap[data-gone] span {
+    white-space: pre;
+  }
+  .tap[data-gone] .undo {
+    color: var(--color-ink);
+    font-size: inherit;
+  }
+  .day__none {
+    margin-top: 14px;
+    color: var(--color-muted);
+    font-size: var(--text-body);
+  }
+  .add-at {
+    display: grid;
+    grid-template-columns: auto minmax(0, 8rem) auto;
+    justify-content: start;
+    align-items: center;
+    gap: var(--gutter);
+    margin-top: 14px;
+  }
+  .add-at label {
+    font-size: var(--text-body);
+    font-weight: 500;
+  }
+  .add-at input {
+    height: 44px;
+    min-width: 0;
+    padding-inline: 12px;
+    border: 1px solid var(--color-etch);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--color-ink);
+    font-size: max(1rem, var(--text-body));
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hours__range {
+    margin-top: 2px;
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    font-weight: 500;
+  }
+  .hours__svg {
+    display: block;
+    width: 100%;
+    height: 96px;
+    margin-top: 18px;
+    overflow: visible;
+  }
+  .hours__trace,
+  .hours__none {
+    fill: none;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+  .hours__trace {
+    stroke: var(--trace);
+    stroke-width: 5;
+  }
+  .hours__none {
+    stroke: var(--color-etch);
+    stroke-width: 3;
+  }
+  .hours__labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    color: var(--color-muted);
+    font-size: var(--text-tiny);
+    line-height: 1;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (width >= 68.75rem) {
+    .detail main {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: var(--gutter);
+    }
+    .poster,
+    .year {
+      grid-column: 1 / -1;
+    }
+    .day {
+      grid-column: 1 / 7;
+      margin-right: calc(-1 * var(--gutter) / 2);
+      padding-right: calc(var(--gutter) / 2 + var(--gutter));
+      border-right: 1px solid var(--color-etch);
+    }
+    /* A habit with nothing logged has no hours, so its day takes the row. */
+    .day:last-child {
+      grid-column: 1 / -1;
+      margin-right: 0;
+      padding-right: 0;
+      border-right: 0;
+    }
+    /* A long day list scrolls past the strip, which stays in view beside it. */
+    .hours {
+      grid-column: 7 / -1;
+      position: sticky;
+      top: 0;
+      align-self: start;
+      padding-left: calc(var(--gutter) / 2);
+    }
+    .poster {
+      grid-template-columns: 23.75rem minmax(0, 1fr);
+      grid-template-rows: auto auto auto 1fr;
+      grid-template-areas:
+        "coil name"
+        "coil kind"
+        "coil today"
+        "coil facts";
+      column-gap: 64px;
+      padding-block: 16px 40px;
+    }
+    .poster .habit__coil {
+      width: 100%;
+      max-width: none;
+      align-self: start;
+    }
+    .poster__name {
+      margin-top: 40px;
+    }
+    .poster__kind {
+      align-self: start;
+    }
+    .poster__today {
+      justify-self: start;
+      margin-top: 28px;
+      text-align: left;
+    }
+    .poster__today .count {
+      justify-content: flex-start;
+    }
+    .facts,
+    .poster__empty {
+      align-self: end;
+      max-width: 32rem;
+    }
+    .year__scroll {
+      --cell: 16px;
+      --gap: 4px;
+      overflow: visible;
+      margin-inline: 0;
+      padding-inline: 0;
+      mask-image: none;
+    }
+    .year__week .cell[data-rings] {
+      --c: 3px;
+      --p: 2.25px;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .trace,
     .coil__svg,
-    .coil__field {
+    .coil__field,
+    .undo,
+    .button {
       transition: none;
     }
+  }
+}
+
+/* Dashboard and habit page: the coil moves between them, and the habit page opens out of it
+   through a die-cut opening while the page outside goes to ink; back closes it into its coil.
+   --curtain is the coil's edge and --curtain-view the visible screen, both in the page's own
+   box, set by the link that was followed. Each page is its own group (PageTurn). */
+/* Opaque, so a page's snapshot never shows the ink behind it. */
+.turn {
+  min-height: 100dvh;
+  background: var(--color-ground);
+}
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-group(.coil) {
+  z-index: 2;
+  animation-duration: 0.9s;
+  animation-timing-function: var(--ease-in-out);
+}
+/* The page underneath carries the ink: the one going away going forward, the one coming
+   back going back. The page that clips sits on top. */
+::view-transition-group(.curtain-fall),
+::view-transition-group(.curtain-rise) {
+  background: var(--color-curtain);
+}
+::view-transition-group(.curtain-open),
+::view-transition-group(.curtain-close) {
+  z-index: 1;
+}
+::view-transition-old(.curtain-fall) {
+  animation: curtain-fall 0.45s var(--ease-in-out) both;
+}
+::view-transition-new(.curtain-open) {
+  animation: curtain-open 0.9s var(--ease-in-out) both;
+}
+/* Back is quicker to fold than to fly: the page is gone into its coil before the coil lands. */
+::view-transition-old(.curtain-close) {
+  animation: curtain-close 0.6s var(--ease-in-out) both;
+}
+::view-transition-new(.curtain-rise) {
+  animation: curtain-rise 0.5s var(--ease-in-out) 0.4s both;
+}
+@keyframes curtain-open {
+  from {
+    clip-path: var(--curtain, inset(40% round 24px));
+  }
+  to {
+    clip-path: var(--curtain-view, inset(0));
+  }
+}
+/* The closed opening dissolves into the coil, which carries on to its place on the dashboard. */
+@keyframes curtain-close {
+  from {
+    clip-path: var(--curtain-view, inset(0));
+  }
+  70% {
+    opacity: 1;
+  }
+  to {
+    clip-path: var(--curtain, inset(40% round 24px));
+    opacity: 0;
+  }
+}
+@keyframes curtain-fall {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes curtain-rise {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

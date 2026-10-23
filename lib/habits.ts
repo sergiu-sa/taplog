@@ -53,6 +53,17 @@ export function osloDay(date: Date | string | number) {
   return osloDate.format(new Date(date));
 }
 
+const osloClock = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Oslo", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+
+// "14:02", the Oslo wall time of a tap.
+export function osloTime(date: Date | string | number) {
+  return osloClock.format(new Date(date));
+}
+
+export function osloHour(date: Date | string | number) {
+  return Number(osloTime(date).slice(0, 2));
+}
+
 // The day is already Oslo's, so it's read at noon UTC and printed in UTC to stay on it.
 const dayFormats = {
   short: new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }),
@@ -70,6 +81,11 @@ export function addDays(day: string, n: number) {
   return d.toISOString().slice(0, 10);
 }
 
+// The Monday of the week holding `day`; grids run Monday to Sunday.
+export function weekStart(day: string) {
+  return addDays(day, -((new Date(`${day}T00:00:00Z`).getUTCDay() + 6) % 7));
+}
+
 // Consecutive on-track days ending yesterday, back to `first` (the first logged day).
 // A day with no logs counts as 0, which fails a goal and passes a limit, so `first`
 // stops a limit streak from reaching back before tracking began.
@@ -82,6 +98,30 @@ export function runBefore(kind: Kind, targets: Target[], counts: Map<string, num
 
 export function streak(kind: Kind, targets: Target[], counts: Map<string, number>, today: string, first: string | undefined) {
   return first ? todayStreak(kind, targetOn(targets, today), counts.get(today) ?? 0, runBefore(kind, targets, counts, today, first)) : 0;
+}
+
+// The longest run, every day scored on its own target. Today joins a run the way it does
+// in streak(): when on track, and an unfinished goal day doesn't end one.
+export function bestStreak(kind: Kind, targets: Target[], counts: Map<string, number>, today: string, first: string | undefined) {
+  let best = 0;
+  if (!first) return best;
+  for (let day = first, run = 0; day <= today; day = addDays(day, 1)) {
+    if (onTrack(kind, counts.get(day) ?? 0, targetOn(targets, day))) run++;
+    else if (day < today || kind === "limit") run = 0;
+    best = Math.max(best, run);
+  }
+  return best;
+}
+
+// Taps a day from the first logged day through yesterday, since today isn't over yet.
+// Tracking that began today has only today to go on.
+export function perDay(counts: Map<string, number>, today: string, first: string | undefined) {
+  if (!first) return 0;
+  const last = first < today ? addDays(today, -1) : today;
+  let days = 0;
+  let taps = 0;
+  for (let day = first; day <= last; day = addDays(day, 1), days++) taps += counts.get(day) ?? 0;
+  return taps / days;
 }
 
 // Today's streak from the run that ended yesterday, so the client can recount after a tap.

@@ -15,32 +15,60 @@ function series(from: string, f: (i: number, day: string) => number) {
   return rows;
 }
 
-const habit = (id: number, name: string, kind: string, daily_target: number, color: string, daily_counts: HabitRecord["daily_counts"]) => ({
+type Targets = HabitRecord["habit_targets"];
+const always = (target: number): Targets => [{ from_day: today, target }];
+
+const habit = (id: number, name: string, kind: string, habit_targets: Targets, color: string, daily_counts: HabitRecord["daily_counts"]) => ({
   id,
   name,
   kind,
   color,
   daily_counts,
-  // Like a habit from before target history: one row from today, earlier days take it too.
-  habit_targets: [{ from_day: today, target: daily_target }],
+  habit_targets,
 });
 
 const water = (todayCount: number) =>
-  habit(1, "Water", "goal", 8, "#3B82F6", series("2026-09-10", (i, d) =>
+  habit(1, "Water", "goal", always(8), "#3B82F6", series("2026-02-02", (i, d) =>
     d === today ? todayCount : d >= "2026-10-09" ? 8 + (wave(i, 1) % 3) : 4 + wave(i, 2) + (i % 3 === 0 ? 2 : 0),
   ));
+
+// Lowered from 15 to 10 two weeks ago: days before it are scored on 15.
+const smokesTargets: Targets = [{ from_day: "2026-09-10", target: 15 }, { from_day: "2026-10-08", target: 10 }];
 
 export const fixtures: Record<string, HabitRecord[]> = {
   // A goal met, a running streak with today unfinished, a limit over target.
   dashboard: [
-    habit(3, "Move", "goal", 1, "#22C55E", series("2026-09-28", (i, d) => (d === today || i % 6 !== 3 ? 1 : 0))),
-    habit(2, "Smokes", "limit", 10, "#F97316", series("2026-09-10", (i, d) => (d === today ? 12 : 6 + wave(i, 0) + (i % 7 === 2 ? 3 : 0)))),
+    habit(3, "Move", "goal", always(1), "#22C55E", series("2026-09-28", (i, d) => (d === today || i % 6 !== 3 ? 1 : 0))),
+    habit(2, "Smokes", "limit", smokesTargets, "#F97316", series("2026-09-10", (i, d) => (d === today ? 12 : 6 + wave(i, 0) + (i % 7 === 2 ? 3 : 0)))),
     water(5),
   ],
   // Early in the day: a habit with nothing logged yet, a limit exactly at target, a goal at 0.
   morning: [
-    habit(3, "Move", "goal", 1, "#22C55E", []),
-    habit(2, "Smokes", "limit", 10, "#F97316", series("2026-09-10", (i, d) => (d === today ? 10 : 5 + wave(i, 3)))),
+    habit(3, "Move", "goal", always(1), "#22C55E", []),
+    habit(2, "Smokes", "limit", smokesTargets, "#F97316", series("2026-09-10", (i, d) => (d === today ? 10 : 5 + wave(i, 3)))),
     water(0),
   ],
 };
+
+const stickers: Record<number, string> = { 1: "Water bottle", 2: "Lighter case" };
+
+// A day's taps spread from 07:00 to 22:30, every third by hand. The instant is built as if
+// Oslo were always UTC+2, so winter days read an hour early; they stay on their day.
+export function fixtureTaps(h: HabitRecord, day: string) {
+  const n = h.daily_counts.find((r) => r.day === day)?.count ?? 0;
+  const seed = Number(day.slice(8)) + h.id;
+  return Array.from({ length: n }, (_, i) => {
+    const minutes = 7 * 60 + Math.round(((i + 0.5) * 930) / n) + wave(seed, i) * 7;
+    return {
+      id: Number(day.replaceAll("-", "")) * 100 + i,
+      created_at: new Date(Date.parse(`${day}T00:00:00Z`) + (minutes - 120) * 60_000).toISOString(),
+      source: i % 3 === 2 || !stickers[h.id] ? "manual" : "nfc",
+      stickers: i % 3 === 2 || !stickers[h.id] ? null : { label: stickers[h.id] },
+    };
+  });
+}
+
+// The last 30 days' tap times, for the hours strip.
+export function fixtureRecent(h: HabitRecord) {
+  return Array.from({ length: 30 }, (_, i) => fixtureTaps(h, addDays(today, -i)).map((t) => t.created_at)).flat();
+}

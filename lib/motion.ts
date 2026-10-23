@@ -5,6 +5,9 @@ import { useLayoutEffect, type DependencyList, type RefObject } from "react";
 // hidden tab pauses everything together. Never add a requestAnimationFrame loop of your own.
 export { gsap };
 
+// A coil with nothing lit has no current to pulse; that's a state, not a typo.
+gsap.config({ nullTargetWarn: false });
+
 export const ease = { out: "expo.out", inOut: "expo.inOut", soft: "power3.out" } as const;
 
 export const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -17,6 +20,31 @@ export function useMotion(scope: RefObject<Element | null>, fn: () => void | (()
     return () => ctx.revert();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
+}
+
+let travelling = false;
+
+// The page transition opens from, or closes into, this coil's die-cut edge (12% inside its
+// box, radius 22% of the edge's side), set before the link navigates. The clip is drawn in
+// the page's own box, which starts at the top of the document: a page opening is scrolled to
+// the top by then, a page closing is still scrolled where it was.
+export function curtainFrom(coil: Element | null | undefined, closing = false) {
+  if (!coil) return;
+  const r = coil.getBoundingClientRect();
+  const y = closing ? scrollY : 0;
+  const i = r.width * 0.12;
+  const s = document.documentElement.style;
+  s.setProperty("--curtain", `rect(${r.top + y + i}px ${r.right - i}px ${r.bottom + y - i}px ${r.left + i}px round ${r.width * 0.76 * 0.22}px)`);
+  s.setProperty("--curtain-view", `rect(${y}px 100% ${y + innerHeight}px 0 round 0)`);
+  travelling = true;
+}
+
+// Whether this page came in through the curtain rather than a load, so its entrance can
+// play without hiding anything a server-rendered first frame already showed.
+export function arrived() {
+  const was = travelling;
+  travelling = false;
+  return was;
 }
 
 // Runs fn on the ticker only while el is on screen.

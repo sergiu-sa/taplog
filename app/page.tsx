@@ -1,24 +1,11 @@
 import type { Metadata } from "next";
-import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { osloDay } from "@/lib/habits";
 import { createClient } from "@/lib/supabase/server";
+import { addLog, removeLog } from "./actions";
 import { Dashboard, toHabitView } from "./dashboard";
 
 export const metadata: Metadata = { title: "Today" };
-
-// A Server Action is its own POST endpoint, so the page's auth check doesn't cover it.
-async function addLog(habitId: number) {
-  "use server";
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  if (!data) redirect("/login");
-
-  // The argument arrives from the client as whatever it sent, not the declared type.
-  if (!Number.isSafeInteger(habitId)) return;
-  await supabase.from("logs").insert({ habit_id: habitId, source: "manual" }).throwOnError();
-  refresh();
-}
 
 export default async function Page() {
   const supabase = await createClient();
@@ -37,5 +24,5 @@ export default async function Page() {
   // eslint-disable-next-line react-hooks/purity
   const today = osloDay(Date.now());
 
-  return <Dashboard today={today} habits={habits.map((h) => toHabitView(h, today))} add={addLog} />;
+  return <Dashboard today={today} habits={habits.map((h) => toHabitView(h, today))} add={addLog} remove={removeLog} />;
 }
