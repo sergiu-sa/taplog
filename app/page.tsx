@@ -29,8 +29,9 @@ export default async function Page() {
   // (1000 by default); move streaks into SQL before a habit has years of days.
   const { data: habits } = await supabase
     .from("habits")
-    .select("id, name, kind, daily_target, color, daily_counts(day, count)")
+    .select("id, name, kind, daily_target, color, daily_counts(day, count), habit_targets(from_day, target)")
     .order("name")
+    .order("from_day", { referencedTable: "habit_targets" })
     .throwOnError();
 
   // Server Components render once per request, so this is just the request time.

@@ -1,6 +1,6 @@
 import { refresh } from "next/cache";
 import { notFound } from "next/navigation";
-import { formatGap, habitStatus, osloDay, toneClass, type Kind } from "@/lib/habits";
+import { formatGap, habitStatus, osloDay, targetOn, toneClass, type Kind } from "@/lib/habits";
 import { verifyId } from "@/lib/sig";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { UndoButton } from "./undo-button";
@@ -35,8 +35,9 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
 
   const { data: log } = await supabaseAdmin
     .from("logs")
-    .select("created_at, habit_id, habits(name, kind, daily_target, color)")
+    .select("created_at, habit_id, habits(name, kind, color, habit_targets(from_day, target))")
     .eq("id", Number(id))
+    .order("from_day", { referencedTable: "habits.habit_targets" })
     .maybeSingle()
     .throwOnError();
 
@@ -77,7 +78,9 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
   ]);
 
   const count = counted?.count ?? 0;
-  const status = habitStatus(kind, count, habit.daily_target);
+  // The link stays valid, so the page can be reopened after the target changed.
+  const target = targetOn(habit.habit_targets, day);
+  const status = habitStatus(kind, count, target);
   const created = new Date(log.created_at).getTime();
   // Server Components render once per request, so this is just the request time.
   // eslint-disable-next-line react-hooks/purity
@@ -98,7 +101,7 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
       </p>
       <p className={`text-7xl font-bold tabular-nums ${toneClass[status.tone]}`}>
         {count}
-        <span className="text-4xl font-semibold text-neutral-400"> / {habit.daily_target}</span>
+        <span className="text-4xl font-semibold text-neutral-400"> / {target}</span>
       </p>
       <p className={`mt-1 text-lg font-medium ${toneClass[status.tone]}`}>{status.label}</p>
 

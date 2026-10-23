@@ -22,6 +22,8 @@ const habit = (id: number, name: string, kind: string, daily_target: number, col
   daily_target,
   color,
   daily_counts,
+  // Like a habit from before target history: one row from today, earlier days take it too.
+  habit_targets: [{ from_day: today, target: daily_target }],
 });
 
 const water = (todayCount: number) =>

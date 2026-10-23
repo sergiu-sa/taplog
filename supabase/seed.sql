@@ -19,6 +19,13 @@ insert into habits (user_id, name, kind, daily_target, color) values
   ('00000000-0000-0000-0000-000000000001', 'Smokes', 'limit', 15, '#F97316'),
   ('00000000-0000-0000-0000-000000000001', 'Move', 'goal', 1, '#22C55E');
 
+-- The trigger gave each habit today's target. Smokes was 10 until two weeks ago, so the grid
+-- shows older days scored on the old limit.
+insert into habit_targets (habit_id, user_id, from_day, target)
+select id, user_id, (now() at time zone 'Europe/Oslo')::date - v.ago, v.target
+from habits, (values (35, 10), (14, 15)) as v (ago, target)
+where name = 'Smokes';
+
 -- Fixed tokens, so http://localhost:3000/t/local-water-sticker-01 logs a tap here.
 insert into stickers (user_id, habit_id, label, token_hash)
 select h.user_id, h.id, h.name || ' sticker', encode(sha256(convert_to(t.token, 'UTF8')), 'hex')
