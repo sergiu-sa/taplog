@@ -1,5 +1,5 @@
 import { addDays, bestStreak, osloHour, osloTime, perDay, runBefore, targetOn, weekStart, type Kind } from "@/lib/habits";
-import type { HabitRecord } from "./dashboard";
+import { countsOf, type HabitRecord } from "./dashboard";
 import type { Day } from "./day-cells";
 
 // The habit page's data, shaped on the server (and from fixtures) for the client component.
@@ -27,12 +27,15 @@ export type DetailView = {
   hours: number[];
 };
 
+// The day the stepper or the heatmap asked for: a real date, never after today.
+export function pickDay(asked: string | string[] | undefined, today: string) {
+  return typeof asked === "string" && /^\d{4}-\d{2}-\d{2}$/.test(asked) && addDays(asked, 0) === asked && asked <= today ? asked : today;
+}
+
 // `taps` are the selected day's; `recent` the last 30 days' tap times, for the hours strip.
 export function toDetailView(h: HabitRecord, today: string, day: string, taps: TapRecord[], recent: string[]): DetailView {
   const kind = h.kind as Kind;
-  // View columns are typed nullable, but a group by never yields null here.
-  const counts = new Map(h.daily_counts.map((r) => [r.day!, r.count!]));
-  const first = [...counts.keys()].sort()[0];
+  const { counts, first } = countsOf(h);
   const start = addDays(weekStart(today), -7 * (WEEKS - 1));
   const hours = Array<number>(24).fill(0);
   for (const t of recent) hours[osloHour(t)]++;

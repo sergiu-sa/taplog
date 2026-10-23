@@ -246,6 +246,8 @@ function DaySection({
   );
   const [removed, setRemoved] = useState<Tap | null>(null);
   const [said, setSaid] = useState("");
+  // Shown, not only announced: a change that didn't stick has to be visible.
+  const [error, setError] = useState("");
   const [, startTransition] = useTransition();
 
   // The removed row stays as "Removed 11:02 · Undo" for as long as the coil's Undo would.
@@ -255,17 +257,19 @@ function DaySection({
     return () => void timer.kill();
   }, [removed]);
 
-  const failed = () => setSaid("Didn't save. Try again.");
+  const failed = () => setError("Didn't save. Try again.");
 
   function removeTap(tap: Tap) {
     setRemoved(null);
+    setError("");
     setSaid(`Removed the ${tap.time} tap.`);
     startTransition(async () => {
       update({ drop: tap.id });
       if (isToday) change(-1);
       try {
-        await remove(tap.id);
-        setRemoved(tap);
+        // Nothing deleted means it was already gone; Undo would add a tap that never existed.
+        if (await remove(tap.id)) setRemoved(tap);
+        else setSaid(`The ${tap.time} tap was already gone.`);
       } catch {
         failed();
       }
@@ -276,9 +280,11 @@ function DaySection({
     if (!removed) return;
     const tap = removed;
     setRemoved(null);
+    setError("");
     setSaid(`Put back the ${tap.time} tap.`);
     startTransition(async () => {
-      update({ put: tap });
+      // A session can only add taps by hand, so that's what comes back.
+      update({ put: { ...tap, label: null } });
       if (isToday) change(1);
       try {
         if (!(await add(habitId, tap.createdAt))) failed();
@@ -293,9 +299,10 @@ function DaySection({
     if (!/^\d{2}:\d{2}$/.test(time)) return;
     // Compared as Oslo wall times; the database refuses a future time anyway.
     if (`${day}T${time}` > `${today}T${osloTime(Date.now())}`) {
-      setSaid("That time hasn't come yet.");
+      setError("That time hasn't come yet.");
       return;
     }
+    setError("");
     setSaid(`Added one at ${time}.`);
     // A negative id until the server answers: unique as a key, and its Remove stays disabled.
     update({ put: { id: -Date.now(), createdAt: `${day}T${time}`, time, label: null } });
@@ -355,6 +362,11 @@ function DaySection({
           Add
         </button>
       </form>
+      {error && (
+        <p className="day__error" role="alert">
+          {error}
+        </p>
+      )}
 
       {rows.length > 0 ? (
         <ul className="taps">
@@ -399,7 +411,7 @@ function Hours({ hours }: { hours: number[] }) {
   const max = Math.max(...hours, 1);
   const busiest = hours.indexOf(Math.max(...hours));
   const label = total
-    ? `Taps by hour, last 30 days. Busiest: ${hourLabel(busiest)}:00 to ${hourLabel(busiest + 1)}:00, ${Math.round((hours[busiest] / total) * 100)}% of ${total}.`
+    ? `Taps by hour, last 30 days. Busiest: ${hourLabel(busiest)}:00 to ${hourLabel((busiest + 1) % 24)}:00, ${Math.round((hours[busiest] / total) * 100)}% of ${total}.`
     : "No taps in the last 30 days.";
 
   return (

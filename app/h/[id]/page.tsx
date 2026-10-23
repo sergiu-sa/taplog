@@ -4,12 +4,11 @@ import { cache } from "react";
 import { addDays, osloDay, osloTime } from "@/lib/habits";
 import { createClient } from "@/lib/supabase/server";
 import { addLog, removeLog } from "../../actions";
-import { toDetailView } from "../../detail-view";
+import { pickDay, toDetailView } from "../../detail-view";
 import { HabitDetail } from "../../habit-detail";
 
-// One query per request for the title and the page. RLS hides other people's habits, so
-// someone else's id reads as missing. The title runs alongside the page's own auth check,
-// and anon has no grant on habits, so signed out it must not query at all.
+// Shared by the title and the page; RLS makes someone else's id read as missing. The title
+// runs alongside the page's auth check, and anon has no grant on habits, so check first.
 const loadHabit = cache(async (id: number) => {
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getClaims();
@@ -27,11 +26,6 @@ export async function generateMetadata({ params }: PageProps<"/h/[id]">): Promis
   const id = Number((await params).id);
   const habit = Number.isSafeInteger(id) ? await loadHabit(id) : null;
   return { title: habit?.name ?? "Not found" };
-}
-
-// A day the stepper or the heatmap asked for: a real date, never after today.
-function pickDay(asked: string | string[] | undefined, today: string) {
-  return typeof asked === "string" && /^\d{4}-\d{2}-\d{2}$/.test(asked) && addDays(asked, 0) === asked && asked <= today ? asked : today;
 }
 
 export default async function HabitPage({ params, searchParams }: PageProps<"/h/[id]">) {

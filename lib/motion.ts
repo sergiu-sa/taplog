@@ -22,7 +22,7 @@ export function useMotion(scope: RefObject<Element | null>, fn: () => void | (()
   }, deps);
 }
 
-let travelling = false;
+let openedAt = -Infinity;
 
 // The page transition opens from, or closes into, this coil's die-cut edge (12% inside its
 // box, radius 22% of the edge's side), set before the link navigates. The clip is drawn in
@@ -36,15 +36,16 @@ export function curtainFrom(coil: Element | null | undefined, closing = false) {
   const s = document.documentElement.style;
   s.setProperty("--curtain", `rect(${r.top + y + i}px ${r.right - i}px ${r.bottom + y - i}px ${r.left + i}px round ${r.width * 0.76 * 0.22}px)`);
   s.setProperty("--curtain-view", `rect(${y}px 100% ${y + innerHeight}px 0 round 0)`);
-  travelling = true;
+  if (!closing) openedAt = performance.now();
 }
 
 // Whether this page came in through the curtain rather than a load, so its entrance can
-// play without hiding anything a server-rendered first frame already showed.
+// play without hiding anything a server-rendered first frame already showed. Read once, and
+// stale after 5 s, so a cmd-click or a reduced-motion visit that never read it can't replay it.
 export function arrived() {
-  const was = travelling;
-  travelling = false;
-  return was;
+  const fresh = performance.now() - openedAt < 5000;
+  openedAt = -Infinity;
+  return fresh;
 }
 
 // Runs fn on the ticker only while el is on screen.

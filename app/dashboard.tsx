@@ -14,11 +14,16 @@ export type HabitRecord = Pick<Tables<"habits">, "id" | "name" | "kind" | "color
   habit_targets: Pick<Tables<"habit_targets">, "from_day" | "target">[];
 };
 
-export function toHabitView(h: HabitRecord, today: string): HabitView {
-  const kind = h.kind as Kind;
+// Each logged day's count, and the first logged day: tracking starts there.
+export function countsOf(h: HabitRecord) {
   // View columns are typed nullable, but a group by never yields null here.
   const counts = new Map(h.daily_counts.map((r) => [r.day!, r.count!]));
-  const first = [...counts.keys()].sort()[0];
+  return { counts, first: [...counts.keys()].sort()[0] };
+}
+
+export function toHabitView(h: HabitRecord, today: string): HabitView {
+  const kind = h.kind as Kind;
+  const { counts, first } = countsOf(h);
   const monday = weekStart(today);
   return {
     id: h.id,

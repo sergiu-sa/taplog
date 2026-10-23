@@ -919,6 +919,14 @@
     color: var(--color-ink);
     font-size: inherit;
   }
+  /* The same signal the coil uses for "Didn't save". */
+  .day__error {
+    margin-top: 10px;
+    color: var(--color-short);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: 500;
+  }
   .day__none {
     margin-top: 14px;
     color: var(--color-muted);
