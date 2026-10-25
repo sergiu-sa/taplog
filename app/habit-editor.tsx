@@ -25,9 +25,11 @@ export function HabitEditor({
   color: string; // what a new habit starts with
   backHref: string;
   save: (prev: Saved, form: FormData) => Promise<Saved>;
-  archive?: () => Promise<void>; // or restore, for an archived habit
-  remove?: () => Promise<void>;
+  archive?: () => Promise<string | void>; // or restore, for an archived habit
+  remove?: () => Promise<string | void>;
 }) {
+  // Controlled: React resets a form's uncontrolled fields after every action, failed ones too.
+  const [title, setTitle] = useState(habit?.name ?? "");
   const [kind, setKind] = useState<Kind>(habit?.kind ?? "goal");
   const [target, setTarget] = useState(habit?.target ?? 1);
   const [color, setColor] = useState(habit?.color ?? firstColor);
@@ -39,10 +41,25 @@ export function HabitEditor({
   }, [saving]);
   const [confirming, setConfirming] = useState(false);
   const [busy, startTransition] = useTransition();
+  const [moreError, setMoreError] = useState("");
   const specimen = useRef<HTMLDivElement>(null);
   // The database refuses the change too; this only stops offering it.
   const locked = (habit?.taps ?? 0) > 0;
   const min = minTarget(kind);
+
+  // Archive and Delete leave the page when they work; a failure stays here as a sentence.
+  function run(action: () => Promise<string | void>) {
+    if (busy) return;
+    setMoreError("");
+    startTransition(async () => {
+      try {
+        const failed = await action();
+        if (failed) setMoreError(failed);
+      } catch {
+        setMoreError("Didn't save. Try again.");
+      }
+    });
+  }
 
   function pickKind(k: Kind) {
     setKind(k);
@@ -91,7 +108,7 @@ export function HabitEditor({
           <div className="editor__fields">
             <label className="field">
               <span>Name</span>
-              <input type="text" name="name" defaultValue={name} required maxLength={40} autoComplete="off" />
+              <input type="text" name="name" value={title} onChange={(e) => setTitle(e.target.value)} required maxLength={40} autoComplete="off" />
             </label>
             {locked ? (
               <div className="field">
@@ -166,7 +183,7 @@ export function HabitEditor({
 
         {habit && (
           <div className="editor__more">
-            <button type="button" className="undo" aria-disabled={busy || undefined} onClick={() => !busy && startTransition(archive!)}>
+            <button type="button" className="undo" aria-disabled={busy || undefined} onClick={() => run(archive!)}>
               {habit.archived ? `Restore ${habit.name}` : `Archive ${habit.name}`}
             </button>
             {confirming ? (
@@ -175,7 +192,7 @@ export function HabitEditor({
                   Deletes {habit.name}
                   {habit.taps > 0 && ` and its ${habit.taps} ${habit.taps === 1 ? "tap" : "taps"}`} for good.
                 </p>
-                <button type="button" className="button" autoFocus aria-disabled={busy || undefined} onClick={() => !busy && startTransition(remove!)}>
+                <button type="button" className="button" autoFocus aria-disabled={busy || undefined} onClick={() => run(remove!)}>
                   Delete {habit.name}
                 </button>
                 <button type="button" className="undo" onClick={() => setConfirming(false)}>
@@ -186,6 +203,11 @@ export function HabitEditor({
               <button type="button" className="undo" onClick={() => setConfirming(true)}>
                 Delete
               </button>
+            )}
+            {moreError && (
+              <p className="editor__error" role="alert">
+                {moreError}
+              </p>
             )}
           </div>
         )}

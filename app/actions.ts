@@ -1,6 +1,6 @@
 "use server";
 
-import { refresh } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { redirect, RedirectType } from "next/navigation";
 import { MAX_TARGET, minTarget } from "@/lib/habits";
 import { PALETTE } from "@/lib/palette";
@@ -77,25 +77,34 @@ export async function saveHabit(id: number | null, _prev: Saved, form: FormData)
   if (error?.message.includes("kind is locked")) return { error: "The kind is locked after the first tap." };
   if (error) return { error: "Didn't save. Try again." };
   if (!data) return { error: "That habit is gone." };
-  redirect(`/h/${data.id}`);
+  landOn(`/h/${data.id}`);
 }
 
-// Archive and Restore both land on the habit's page, replacing the page they came from.
-export async function setArchived(id: number, archived: boolean) {
+// Archive and Restore both land on the habit's page. A sentence comes back only if it failed.
+export async function setArchived(id: number, archived: boolean): Promise<string | void> {
   const supabase = await signedIn();
-  if (!Number.isSafeInteger(id) || typeof archived !== "boolean") return;
-  await supabase
+  if (!Number.isSafeInteger(id) || typeof archived !== "boolean") return "That habit is gone.";
+  const { error } = await supabase
     .from("habits")
     .update({ archived_at: archived ? new Date().toISOString() : null })
-    .eq("id", id)
-    .throwOnError();
-  redirect(`/h/${id}`, RedirectType.replace);
+    .eq("id", id);
+  if (error) return "Didn't save. Try again.";
+  landOn(`/h/${id}`);
 }
 
 // Its taps and target history go with it; its stickers stay, with no habit.
-export async function deleteHabit(id: number) {
+export async function deleteHabit(id: number): Promise<string | void> {
   const supabase = await signedIn();
-  if (!Number.isSafeInteger(id)) return;
-  await supabase.from("habits").delete().eq("id", id).throwOnError();
-  redirect("/", RedirectType.replace);
+  if (!Number.isSafeInteger(id)) return "That habit is gone.";
+  const { error } = await supabase.from("habits").delete().eq("id", id);
+  if (error) return "Didn't save. Try again.";
+  landOn("/");
+}
+
+// Every page already visited is stale after these, and Back would restore one from the client
+// cache (a deleted habit, a coil on an archived one); revalidating refetches them. Replacing
+// the editor's entry keeps Back from returning to a form that's been saved.
+function landOn(path: string): never {
+  revalidatePath("/", "layout");
+  redirect(path, RedirectType.replace);
 }

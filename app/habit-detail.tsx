@@ -29,7 +29,7 @@ export function HabitDetail({
   editHref: string;
   add: Add;
   remove: Remove;
-  restore: () => Promise<void>;
+  restore: () => Promise<string | void>;
 }) {
   const { id, name, kind, target } = view;
   const tally = useTally(view, add, remove);
@@ -39,7 +39,8 @@ export function HabitDetail({
   const status = habitStatus(kind, count, target);
   const first = view.first ?? (count > 0 ? today : undefined);
   const current = first ? todayStreak(kind, target, count, view.before) : 0;
-  const cells = toCells(kind, view.year, count, today, first);
+  // An archived habit's year stops on its archive day; the days after it are dots, untracked.
+  const cells = toCells(kind, view.year, count, view.archived ?? today, first);
 
   // Arriving from the dashboard, the year draws in row by row and the hours rise. A page
   // load already painted them from the server, so it shows them as they are.
@@ -172,14 +173,35 @@ export function HabitDetail({
   );
 }
 
-function Restore({ day, restore }: { day: string; restore: () => Promise<void> }) {
+function Restore({ day, restore }: { day: string; restore: () => Promise<string | void> }) {
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState("");
   return (
     <div className="poster__today poster__archived">
       <p className="habit__status">Archived on {formatDay(day)}</p>
-      <button type="button" className="button" aria-disabled={pending || undefined} onClick={() => !pending && startTransition(restore)}>
+      <button
+        type="button"
+        className="button"
+        aria-disabled={pending || undefined}
+        onClick={() =>
+          !pending &&
+          startTransition(async () => {
+            setError("");
+            try {
+              setError((await restore()) || "");
+            } catch {
+              setError("Didn't save. Try again.");
+            }
+          })
+        }
+      >
         Restore
       </button>
+      {error && (
+        <p className="day__error" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

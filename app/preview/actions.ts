@@ -28,7 +28,7 @@ export async function previewSave(_prev: Saved, form: FormData): Promise<Saved> 
   return null;
 }
 
-export async function previewDone() {
+export async function previewDone(): Promise<string | void> {
   if (process.env.DESIGN_PREVIEW !== "1") return;
   await pause();
   console.log("preview archive, restore or delete");
