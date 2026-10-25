@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Dashboard, toHabitView } from "../../dashboard";
-import { previewAdd } from "../actions";
+import { previewAdd, previewRemove } from "../actions";
 import { fixtures, today } from "../fixtures";
 
 export const metadata: Metadata = { title: "Today" };
@@ -13,5 +13,13 @@ export default async function Preview({ params }: PageProps<"/preview/[fixture]"
   const { fixture } = await params;
   if (!Object.hasOwn(fixtures, fixture)) notFound();
 
-  return <Dashboard today={today} habits={fixtures[fixture].map((h) => toHabitView(h, today))} add={previewAdd} />;
+  return (
+    <Dashboard
+      today={today}
+      habits={fixtures[fixture].map((h) => toHabitView(h, today))}
+      habitHref={`/preview/${fixture}/h/`}
+      add={previewAdd}
+      remove={previewRemove}
+    />
+  );
 }

@@ -1,9 +1,21 @@
 "use server";
 
-// The preview's +1 saves nothing. The pause stands in for the round trip to the database,
-// so the pending lock can be exercised, and the log line counts how often it ran.
-export async function previewAdd(habitId: number) {
-  if (process.env.DESIGN_PREVIEW !== "1") return;
-  await new Promise((resolve) => setTimeout(resolve, 600));
-  console.log(`preview +1 ${habitId}`);
+import type { Logged, Removed } from "../actions";
+
+// The preview's actions save nothing. The pause stands in for the round trip to the database,
+// so the pending lock can be exercised, and the log line counts how often each ran.
+const pause = () => new Promise((resolve) => setTimeout(resolve, 600));
+
+export async function previewAdd(habitId: number, at?: string): Promise<Logged | null> {
+  if (process.env.DESIGN_PREVIEW !== "1") return null;
+  await pause();
+  console.log(`preview +1 ${habitId}${at ? ` at ${at}` : ""}`);
+  return { id: -Date.now(), createdAt: new Date().toISOString() };
+}
+
+export async function previewRemove(id: number): Promise<Removed | null> {
+  if (process.env.DESIGN_PREVIEW !== "1") return null;
+  await pause();
+  console.log(`preview -1 ${id}`);
+  return { habitId: 0, createdAt: new Date().toISOString() };
 }

@@ -51,8 +51,8 @@ select throws_ok(
   '42501', null, 'a session cannot set user_id'
 );
 select throws_ok(
-  $$ insert into logs (habit_id, source, created_at) values (9001, 'manual', now() - interval '1 day') $$,
-  '42501', null, 'a session cannot backdate a log'
+  $$ insert into logs (habit_id, source, created_at) values (9001, 'manual', now() + interval '1 day') $$,
+  '42501', null, 'a session cannot date a log in the future'
 );
 select throws_ok($$ select * from tap('x') $$, '42501', null, 'a session cannot call tap()');
 select throws_ok($$ select new_sticker(9001, 'x') $$, '42501', null, 'a session cannot call new_sticker()');

@@ -1,16 +1,20 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useId, useRef, useState, ViewTransition, type PointerEvent } from "react";
 import type { Kind } from "@/lib/habits";
 import { ease, gsap, reducedMotion, useMotion, whileVisible } from "@/lib/motion";
 import { Coil } from "./coil";
 
 const HOLD = 0.45;
 const GLINT_SPEED = 45; // viewBox units per second, so every coil's current moves alike
+// The coil moves between the dashboard and the habit page on the app's own links only. Browser
+// back carries no type, and the iOS swipe already draws its own transition.
+const MOVE = { "nav-forward": "coil", "nav-back": "coil", default: "none" };
 
 // The +1 button. A pointer has to hold it, so a thumb brushing past while scrolling logs
 // nothing; Enter and Space are deliberate already and log at once.
 export function CoilButton({
+  habitId,
   label,
   kind,
   target,
@@ -19,8 +23,11 @@ export function CoilButton({
   failed,
   delay,
   describedBy,
+  added,
   onFire,
+  onUndo,
 }: {
+  habitId: number;
   label: string;
   kind: Kind;
   target: number;
@@ -29,7 +36,9 @@ export function CoilButton({
   failed: boolean;
   delay: number;
   describedBy: string;
+  added: { time: string } | null;
   onFire: () => void;
+  onUndo: () => void;
 }) {
   const root = useRef<HTMLButtonElement>(null);
   const timer = useRef<gsap.core.Tween | null>(null);
@@ -70,15 +79,33 @@ export function CoilButton({
   );
 
   // A log: the new turn draws, a field pulse leaves the edge, and a goal reached by this
-  // tap sends current through every turn before the chip lights.
+  // tap sends current through every turn before the chip lights. Undo unwinds a turn.
   const prev = useRef(count);
   useMotion(
     root,
     () => {
       const was = prev.current;
       prev.current = count;
-      if (count <= was) return;
-      const turn = root.current!.querySelectorAll(".coil__turn")[count - 1];
+      const turns = root.current!.querySelectorAll(".coil__turn");
+      // A tap taken back: its turn is already unlit, so it's drawn lit while it drains back to
+      // its jog, then left as a plain etched turn.
+      if (count < was) {
+        const turn = turns[count];
+        if (!turn) return;
+        const done = () => {
+          turn.removeAttribute("data-unwind");
+          gsap.set(turn, { clearProps: "strokeDasharray,strokeDashoffset" });
+        };
+        turn.setAttribute("data-unwind", "");
+        gsap.fromTo(
+          turn,
+          { strokeDasharray: "1 1", strokeDashoffset: 0 },
+          { strokeDashoffset: 1, duration: 0.7, ease: ease.out, autoRound: false, onComplete: done },
+        );
+        return done;
+      }
+      if (count === was) return;
+      const turn = turns[count - 1];
       const tl = gsap.timeline();
       if (turn) tl.fromTo(turn, { strokeDasharray: "1 1", strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.7, ease: ease.out, autoRound: false });
       tl.fromTo(".coil__ring", { scale: 1, opacity: 0.9 }, { scale: 1.3, opacity: 0, duration: 0.8, ease: ease.out }, 0);
@@ -110,34 +137,50 @@ export function CoilButton({
 
   return (
     <div className="habit__coil">
-      <button
-        ref={root}
-        type="button"
-        className={charging ? "coil is-charging" : "coil"}
-        aria-label={label}
-        // The hint too, so a screen reader says to hold (VoiceOver: double-tap and hold).
-        aria-describedby={`${describedBy} ${hintId}`}
-        aria-disabled={busy || undefined}
-        onPointerDown={start}
-        onPointerUp={stop}
-        onPointerLeave={stop}
-        onPointerCancel={stop}
-        onClick={(e) => {
-          // detail 0: keyboard or assistive tech. A pointer's click comes after the hold.
-          if (e.detail === 0 && !busy) onFire();
-        }}
-        // A held Enter repeats its click; only the first press counts.
-        onKeyDown={(e) => {
-          if (e.repeat) e.preventDefault();
-        }}
-        onContextMenu={(e) => e.preventDefault()}
-      >
-        <span className="coil__field" aria-hidden="true" />
-        <span className="coil__ring" aria-hidden="true" />
-        <Coil kind={kind} target={target} count={count} />
-      </button>
+      <ViewTransition name={`coil-${habitId}`} share={MOVE} default="none">
+        <button
+          ref={root}
+          type="button"
+          data-coil={habitId}
+          className={charging ? "coil is-charging" : "coil"}
+          aria-label={label}
+          // The hint too, so a screen reader says to hold (VoiceOver: double-tap and hold).
+          aria-describedby={`${describedBy} ${hintId}`}
+          aria-disabled={busy || undefined}
+          onPointerDown={start}
+          onPointerUp={stop}
+          onPointerLeave={stop}
+          onPointerCancel={stop}
+          onClick={(e) => {
+            // detail 0: keyboard or assistive tech. A pointer's click comes after the hold.
+            if (e.detail === 0 && !busy) onFire();
+          }}
+          // A held Enter repeats its click; only the first press counts.
+          onKeyDown={(e) => {
+            if (e.repeat) e.preventDefault();
+          }}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <span className="coil__field" aria-hidden="true" />
+          <span className="coil__ring" aria-hidden="true" />
+          <Coil kind={kind} target={target} count={count} />
+        </button>
+      </ViewTransition>
       <p id={hintId} className="coil__hint" data-failed={failed || undefined}>
-        {failed ? "Didn't save. Try again." : charging ? "Keep holding" : "Hold to add"}
+        {failed ? (
+          "Didn't save. Try again."
+        ) : charging ? (
+          "Keep holding"
+        ) : added ? (
+          <>
+            Added {added.time} ·{" "}
+            <button type="button" className="undo" aria-disabled={busy || undefined} onClick={() => !busy && onUndo()}>
+              Undo
+            </button>
+          </>
+        ) : (
+          "Hold to add"
+        )}
       </p>
     </div>
   );
