@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Dashboard, toHabitView } from "../../dashboard";
+import { Dashboard, splitHabits } from "../../dashboard";
 import { previewAdd, previewRemove } from "../actions";
 import { fixtures, today } from "../fixtures";
 
@@ -16,8 +16,9 @@ export default async function Preview({ params }: PageProps<"/preview/[fixture]"
   return (
     <Dashboard
       today={today}
-      habits={fixtures[fixture].map((h) => toHabitView(h, today))}
+      {...splitHabits(fixtures[fixture], today)}
       habitHref={`/preview/${fixture}/h/`}
+      newHref={`/preview/${fixture}/new`}
       add={previewAdd}
       remove={previewRemove}
     />

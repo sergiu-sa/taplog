@@ -1,26 +1,11 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { cache } from "react";
 import { addDays, osloDay, osloTime } from "@/lib/habits";
 import { createClient } from "@/lib/supabase/server";
-import { addLog, removeLog } from "../../actions";
+import { addLog, removeLog, setArchived } from "../../actions";
 import { pickDay, toDetailView } from "../../detail-view";
 import { HabitDetail } from "../../habit-detail";
-
-// Shared by the title and the page; RLS makes someone else's id read as missing. The title
-// runs alongside the page's auth check, and anon has no grant on habits, so check first.
-const loadHabit = cache(async (id: number) => {
-  const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getClaims();
-  if (!auth) return null;
-  const { data } = await supabase
-    .from("habits")
-    .select("id, name, kind, color, daily_counts(day, count), habit_targets(from_day, target)")
-    .eq("id", id)
-    .maybeSingle()
-    .throwOnError();
-  return data;
-});
+import { loadHabit } from "./habit";
 
 export async function generateMetadata({ params }: PageProps<"/h/[id]">): Promise<Metadata> {
   const id = Number((await params).id);
@@ -69,8 +54,10 @@ export default async function HabitPage({ params, searchParams }: PageProps<"/h/
       view={toDetailView(habit, today, day, taps, recent.map((r) => r.created_at))}
       today={today}
       now={osloTime(now)}
+      editHref={`/h/${id}/edit`}
       add={addLog}
       remove={removeLog}
+      restore={setArchived.bind(null, id, false)}
     />
   );
 }

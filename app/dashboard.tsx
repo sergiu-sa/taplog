@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
+import { coil } from "@/lib/coil";
 import { addDays, formatDay, runBefore, targetOn, weekStart, type Kind } from "@/lib/habits";
 import type { Tables } from "@/lib/supabase/types";
 import { HabitRow, type HabitView } from "./habit-row";
@@ -9,7 +11,7 @@ const WEEKS = 5;
 
 // The shape the dashboard query returns. Fixtures use it too, so the preview goes
 // through the same conversion as real data.
-export type HabitRecord = Pick<Tables<"habits">, "id" | "name" | "kind" | "color"> & {
+export type HabitRecord = Pick<Tables<"habits">, "id" | "name" | "kind" | "color" | "archived_at"> & {
   daily_counts: Pick<Tables<"daily_counts">, "day" | "count">[];
   habit_targets: Pick<Tables<"habit_targets">, "from_day" | "target">[];
 };
@@ -41,19 +43,38 @@ export function toHabitView(h: HabitRecord, today: string): HabitView {
   };
 }
 
+export type Shelved = { id: number; name: string };
+
+// Today's habits, and the archived ones by name for the shelf under them.
+export function splitHabits(records: HabitRecord[], today: string) {
+  return {
+    habits: records.filter((h) => !h.archived_at).map((h) => toHabitView(h, today)),
+    archived: records.filter((h) => h.archived_at).map(({ id, name }) => ({ id, name })),
+  };
+}
+
+// Up to three habits sit side by side as before; from four the sheet runs in balanced rows of
+// at most four (5 → 3 + 2, 7 → 4 + 3), which the desktop CSS reads from data-cols.
+const sheetCols = (n: number) => (n < 4 ? undefined : Math.ceil(n / Math.ceil(n / 4)));
+
 export function Dashboard({
   today,
   habits,
+  archived,
   habitHref = "/h/",
+  newHref = "/habits/new",
   add,
   remove,
 }: {
   today: string;
   habits: HabitView[];
+  archived: Shelved[];
   habitHref?: string;
+  newHref?: string;
   add: Add;
   remove: Remove;
 }) {
+  const cols = sheetCols(habits.length);
   return (
     <PageTurn>
       <div className="page">
@@ -69,19 +90,82 @@ export function Dashboard({
 
         <main id="main" tabIndex={-1}>
           <h1 className="title">Today</h1>
-          <div className="habits">
-            {habits.map((h, i) => (
-              <HabitRow key={h.id} habit={h} today={today} index={i} href={`${habitHref}${h.id}`} add={add} remove={remove} />
-            ))}
-          </div>
+          {habits.length > 0 ? (
+            <>
+              <div className="habits" data-cols={cols} style={cols ? ({ "--cols": cols } as CSSProperties) : undefined}>
+                {habits.map((h, i) => (
+                  <HabitRow key={h.id} habit={h} today={today} index={i} href={`${habitHref}${h.id}`} add={add} remove={remove} />
+                ))}
+              </div>
+              <div className="shelf">
+                <Link href={newHref} prefetch={false} className="shelf__new">
+                  <span className="shelf__mark" aria-hidden="true" />
+                  <span className="trace">New habit</span>
+                </Link>
+                <Archived archived={archived} habitHref={habitHref} />
+              </div>
+            </>
+          ) : (
+            <div className="empty">
+              {archived.length > 0 ? (
+                <p>
+                  <strong>Nothing on Today</strong>
+                  Make a habit, or restore an archived one from its page.
+                </p>
+              ) : (
+                <p>
+                  <strong>No habits yet</strong>
+                  Make one, then give it a sticker. Every tap winds a turn.
+                </p>
+              )}
+              <Link href={newHref} prefetch={false} className="empty__slot">
+                <EmptySlot />
+                New habit
+              </Link>
+              <Archived archived={archived} habitHref={habitHref} />
+            </div>
+          )}
         </main>
 
         <footer className="colophon">
-          <p>Every sticker tap winds one more turn. Hold a coil to add one by hand.</p>
-          <p>The outlined day is today. Dots are days before tracking began or still to come.</p>
+          {habits.length > 0 && (
+            <>
+              <p>Every sticker tap winds one more turn. Hold a coil to add one by hand.</p>
+              <p>The outlined day is today. Dots are days before tracking began or still to come.</p>
+            </>
+          )}
           <p>Counts reset at midnight, Oslo time.</p>
         </footer>
       </div>
     </PageTurn>
+  );
+}
+
+function Archived({ archived, habitHref }: { archived: Shelved[]; habitHref: string }) {
+  if (archived.length === 0) return null;
+  return (
+    <p className="shelf__archived">
+      Archived:{" "}
+      {archived.map((h, i) => (
+        <span key={h.id}>
+          {i > 0 && ", "}
+          <Link href={`${habitHref}${h.id}`} prefetch={false}>
+            {h.name}
+          </Link>
+        </span>
+      ))}
+    </p>
+  );
+}
+
+// Where a sticker would sit on the sheet: the die-cut edge with nothing wound inside.
+function EmptySlot() {
+  return (
+    <span className="coil slot" aria-hidden="true">
+      <svg viewBox="0 0 100 100" className="coil__svg" focusable="false">
+        <path className="slot__edge" d={coil("goal", 0, 0).edgePath} />
+        <path className="slot__plus" d="M50 42V58M42 50H58" />
+      </svg>
+    </span>
   );
 }

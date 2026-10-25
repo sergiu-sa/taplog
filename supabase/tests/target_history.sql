@@ -59,12 +59,7 @@ select throws_ok(
 select throws_ok($$ update habit_targets set target = 1 $$, '42501', null, 'or rewrite it');
 select throws_ok($$ delete from habit_targets $$, '42501', null, 'or delete it');
 
--- Once a session may edit its own habits, the trigger still records the change.
-reset role;
-grant update (daily_target) on habits to authenticated;
-create policy "edit own habits" on habits for update to authenticated
-  using (user_id = (select auth.uid()));
-set local role authenticated;
+-- A session edits its own habits, and the trigger still records the change.
 select set_config('request.jwt.claims', '{"sub": "00000000-0000-0000-0000-00000000000a", "role": "authenticated"}', true);
 
 select lives_ok($$ update habits set daily_target = 10 where id = 9001 $$, 'A changes its own target');
