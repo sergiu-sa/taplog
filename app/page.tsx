@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { osloDay } from "@/lib/habits";
 import { createClient } from "@/lib/supabase/server";
 import { addLog, removeLog } from "./actions";
-import { Dashboard, toHabitView } from "./dashboard";
+import { Dashboard, splitHabits } from "./dashboard";
 
 export const metadata: Metadata = { title: "Today" };
 
@@ -16,7 +16,7 @@ export default async function Page() {
   // (1000 by default); move streaks into SQL before a habit has years of days.
   const { data: habits } = await supabase
     .from("habits")
-    .select("id, name, kind, color, daily_counts(day, count), habit_targets(from_day, target)")
+    .select("id, name, kind, color, archived_at, daily_counts(day, count), habit_targets(from_day, target)")
     .order("name")
     .throwOnError();
 
@@ -24,5 +24,5 @@ export default async function Page() {
   // eslint-disable-next-line react-hooks/purity
   const today = osloDay(Date.now());
 
-  return <Dashboard today={today} habits={habits.map((h) => toHabitView(h, today))} add={addLog} remove={removeLog} />;
+  return <Dashboard today={today} {...splitHabits(habits, today)} add={addLog} remove={removeLog} />;
 }

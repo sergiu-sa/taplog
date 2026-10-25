@@ -18,11 +18,12 @@ function series(from: string, f: (i: number, day: string) => number) {
 type Targets = HabitRecord["habit_targets"];
 const always = (target: number): Targets => [{ from_day: today, target }];
 
-const habit = (id: number, name: string, kind: string, habit_targets: Targets, color: string, daily_counts: HabitRecord["daily_counts"]) => ({
+const habit = (id: number, name: string, kind: string, habit_targets: Targets, color: string, daily_counts: HabitRecord["daily_counts"], archived_at: string | null = null) => ({
   id,
   name,
   kind,
   color,
+  archived_at,
   daily_counts,
   habit_targets,
 });
@@ -47,6 +48,19 @@ export const fixtures: Record<string, HabitRecord[]> = {
     habit(3, "Move", "goal", always(1), "#22C55E", []),
     habit(2, "Smokes", "limit", smokesTargets, "#F97316", series("2026-09-10", (i, d) => (d === today ? 10 : 5 + wave(i, 3)))),
     water(0),
+  ],
+  // A first visit: nothing made yet.
+  empty: [],
+  // Past four on the sheet (4 + 3 on desktop), a name that wraps, and an archived habit.
+  many: [
+    habit(3, "Move", "goal", always(1), "#22C55E", series("2026-09-28", (i, d) => (d === today || i % 6 !== 3 ? 1 : 0))),
+    habit(2, "Smokes", "limit", smokesTargets, "#F97316", series("2026-09-10", (i, d) => (d === today ? 9 : 6 + wave(i, 0)))),
+    water(6),
+    habit(4, "Floss", "goal", always(1), "#14B8A6", series("2026-10-01", (i, d) => (d === today ? 0 : i % 4 === 1 ? 0 : 1))),
+    habit(5, "Read", "goal", always(2), "#8B5CF6", series("2026-09-20", (i, d) => (d === today ? 1 : wave(i, 4) % 3))),
+    habit(6, "Stretch", "goal", always(3), "#F59E0B", series("2026-10-12", (i, d) => (d === today ? 3 : 1 + (wave(i, 5) % 3)))),
+    habit(7, "Walk the dog", "goal", always(2), "#0EA5E9", series("2026-09-01", (i, d) => (d === today ? 1 : 2 - (i % 5 === 0 ? 1 : 0)))),
+    habit(8, "Guitar", "goal", always(1), "#D946EF", series("2026-08-01", (i, d) => (d > "2026-10-12" ? 0 : i % 3 ? 1 : 0)), "2026-10-12T18:20:00Z"),
   ],
 };
 

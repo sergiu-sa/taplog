@@ -1,4 +1,4 @@
-import { addDays, bestStreak, osloHour, osloTime, perDay, runBefore, targetOn, weekStart, type Kind } from "@/lib/habits";
+import { addDays, bestStreak, osloDay, osloHour, osloTime, perDay, runBefore, targetOn, weekStart, type Kind } from "@/lib/habits";
 import { countsOf, type HabitRecord } from "./dashboard";
 import type { Day } from "./day-cells";
 
@@ -13,6 +13,7 @@ export type DetailView = {
   name: string;
   kind: Kind;
   color: string;
+  archived: string | null; // the Oslo day it was archived on
   target: number;
   count: number;
   before: number;
@@ -44,6 +45,7 @@ export function toDetailView(h: HabitRecord, today: string, day: string, taps: T
     name: h.name,
     kind,
     color: h.color,
+    archived: h.archived_at && osloDay(h.archived_at),
     target: targetOn(h.habit_targets, today),
     count: counts.get(today) ?? 0,
     before: runBefore(kind, h.habit_targets, counts, today, first),
@@ -65,5 +67,27 @@ export function toDetailView(h: HabitRecord, today: string, day: string, taps: T
       label: t.stickers?.label ?? (t.source === "nfc" ? "Sticker" : null),
     })),
     hours,
+  };
+}
+
+export type EditorView = {
+  id: number;
+  name: string;
+  kind: Kind;
+  target: number;
+  color: string;
+  archived: boolean;
+  taps: number; // all of them: the kind locks at the first, and Delete says how many go
+};
+
+export function toEditorView(h: HabitRecord, today: string): EditorView {
+  return {
+    id: h.id,
+    name: h.name,
+    kind: h.kind as Kind,
+    target: targetOn(h.habit_targets, today),
+    color: h.color,
+    archived: h.archived_at !== null,
+    taps: h.daily_counts.reduce((n, r) => n + r.count!, 0),
   };
 }

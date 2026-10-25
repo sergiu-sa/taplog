@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useOptimistic, useRef, useState, useTransition, type CSSProperties } from "react";
 import { addDays, formatDay, habitStatus, osloTime, todayStreak, type Kind } from "@/lib/habits";
 import { arrived, curtainFrom, ease, gsap, useMotion } from "@/lib/motion";
+import { Coil } from "./coil";
 import { CoilButton } from "./coil-button";
 import { PageTurn } from "./page-turn";
 import { CellKey, toCells, type Cell } from "./day-cells";
@@ -16,15 +17,19 @@ export function HabitDetail({
   today,
   now,
   backHref = "/",
+  editHref,
   add,
   remove,
+  restore,
 }: {
   view: DetailView;
   today: string;
   now: string; // the Oslo time the server rendered at, for the time field
   backHref?: string;
+  editHref: string;
   add: Add;
   remove: Remove;
+  restore: () => Promise<void>;
 }) {
   const { id, name, kind, target } = view;
   const tally = useTally(view, add, remove);
@@ -83,35 +88,51 @@ export function HabitDetail({
 
         <main id="main" tabIndex={-1}>
           <section className="poster" aria-labelledby="habit-name">
-            <CoilButton
-              habitId={id}
-              label={`Add one ${name}`}
-              kind={kind}
-              target={target}
-              count={count}
-              busy={tally.pending}
-              failed={tally.failed}
-              delay={0}
-              describedBy={`habit-${id}-today`}
-              added={tally.added}
-              onFire={tally.fire}
-              onUndo={tally.undo}
-            />
+            {view.archived ? (
+              <div className="habit__coil">
+                <div className="coil coil--still">
+                  <Coil kind={kind} target={target} count={count} />
+                </div>
+              </div>
+            ) : (
+              <CoilButton
+                habitId={id}
+                label={`Add one ${name}`}
+                kind={kind}
+                target={target}
+                count={count}
+                busy={tally.pending}
+                failed={tally.failed}
+                delay={0}
+                describedBy={`habit-${id}-today`}
+                added={tally.added}
+                onFire={tally.fire}
+                onUndo={tally.undo}
+              />
+            )}
             <h1 id="habit-name" className="title poster__name">
               {name}
             </h1>
             <p className="poster__kind">
-              {kind === "goal" ? "Goal" : "Limit"} · {kind === "goal" ? `${target} a day` : `at most ${target} a day`}
+              {kind === "goal" ? "Goal" : "Limit"} · {kind === "goal" ? `${target} a day` : `at most ${target} a day`} ·{" "}
+              <Link href={editHref} prefetch={false}>
+                Edit
+              </Link>
             </p>
-            <div className="poster__today" id={`habit-${id}-today`}>
-              <p className="count">
-                <span className="count__n">{count}</span>
-                <span className="count__of">/{target}</span>
-              </p>
-              <p className="habit__status" data-tone={status.tone}>
-                {status.label}
-              </p>
-            </div>
+            {/* An archived habit has no today to count towards: its slot says so and offers Restore. */}
+            {view.archived ? (
+              <Restore day={view.archived} restore={restore} />
+            ) : (
+              <div className="poster__today" id={`habit-${id}-today`}>
+                <p className="count">
+                  <span className="count__n">{count}</span>
+                  <span className="count__of">/{target}</span>
+                </p>
+                <p className="habit__status" data-tone={status.tone}>
+                  {status.label}
+                </p>
+              </div>
+            )}
             {first ? (
               <dl className="facts">
                 <div>
@@ -148,6 +169,18 @@ export function HabitDetail({
         </footer>
       </div>
     </PageTurn>
+  );
+}
+
+function Restore({ day, restore }: { day: string; restore: () => Promise<void> }) {
+  const [pending, startTransition] = useTransition();
+  return (
+    <div className="poster__today poster__archived">
+      <p className="habit__status">Archived on {formatDay(day)}</p>
+      <button type="button" className="button" aria-disabled={pending || undefined} onClick={() => !pending && startTransition(restore)}>
+        Restore
+      </button>
+    </div>
   );
 }
 
@@ -319,7 +352,8 @@ function DaySection({
   const rows: Row[] = [...taps, ...(removed ? [{ ...removed, gone: true }] : [])].toSorted((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
   const yesterday = addDays(today, -1);
   const title = isToday ? "Today" : day === yesterday ? "Yesterday" : formatDay(day);
-  const quiet = !view.first || day < view.first;
+  // Before the first tap, or after the habit was archived: nothing was being tracked.
+  const quiet = !view.first || day < view.first || (view.archived !== null && day > view.archived);
 
   return (
     <section className="day" aria-labelledby="day-title">
@@ -345,23 +379,19 @@ function DaySection({
       </div>
       <p className="day__count">
         {count} of {dayTarget}
-        {!quiet && ` · ${dayStatus(kind, count, dayTarget, !isToday)}`}
+        {!quiet && ` · ${dayStatus(kind, count, dayTarget, !isToday || view.archived !== null)}`}
       </p>
 
       {/* Above the list: a limit day can run to 15 rows, and adding is the common case. */}
-      <form action={addAt} className="add-at">
-        <label htmlFor="add-at-time">Add one at</label>
-        <input
-          id="add-at-time"
-          name="time"
-          type="time"
-          required
-          defaultValue={now}
-        />
-        <button type="submit" className="button">
-          Add
-        </button>
-      </form>
+      {!view.archived && (
+        <form action={addAt} className="add-at">
+          <label htmlFor="add-at-time">Add one at</label>
+          <input id="add-at-time" name="time" type="time" required defaultValue={now} />
+          <button type="submit" className="button">
+            Add
+          </button>
+        </form>
+      )}
       {error && (
         <p className="day__error" role="alert">
           {error}
@@ -384,9 +414,12 @@ function DaySection({
                   {t.time}
                 </time>
                 <span className="tap__source">{t.label ?? "by hand"}</span>
-                <button type="button" className="undo" aria-label={`Remove the ${t.time} tap`} disabled={t.id < 0} onClick={() => removeTap(t)}>
-                  Remove
-                </button>
+                {/* Archived taps are history: putting one back after a Remove would be refused. */}
+                {!view.archived && (
+                  <button type="button" className="undo" aria-label={`Remove the ${t.time} tap`} disabled={t.id < 0} onClick={() => removeTap(t)}>
+                    Remove
+                  </button>
+                )}
               </li>
             ),
           )}

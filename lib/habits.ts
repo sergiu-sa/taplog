@@ -8,6 +8,11 @@ export const toneClass: Record<Tone, string> = {
   over: "text-red-600 dark:text-red-400",
 };
 
+// Past 20 turns the coil blurs; a limit of 0 means none at all, a goal of 0 would always be met.
+// habits_daily_target_check in the database holds the same range.
+export const MAX_TARGET = 20;
+export const minTarget = (kind: Kind) => (kind === "goal" ? 1 : 0);
+
 // A goal is met at count >= target; a limit holds while count <= target.
 export function onTrack(kind: Kind, count: number, target: number) {
   return kind === "goal" ? count >= target : count <= target;
