@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+/* dark: utilities follow data-theme like the colours do, and the device when nothing is picked. */
+@custom-variant dark {
+  &:where([data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-theme="light"] *)) {
+      @slot;
+    }
+  }
+}
+
 /* Colours follow color-scheme through light-dark(): the device's, or data-theme's on <html>. */
 @theme {
   --color-ground: light-dark(#f3f4f1, #0d0e0d);
