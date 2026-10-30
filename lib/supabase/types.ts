@@ -176,6 +176,10 @@ export type Database = {
       }
     }
     Functions: {
+      new_link: {
+        Args: { sticker_id: number }
+        Returns: string
+      }
       new_sticker: {
         Args: { habit_id: number; label: string }
         Returns: string
@@ -185,6 +189,7 @@ export type Database = {
         Returns: {
           dup: boolean
           log_id: number
+          sticker_id: number
         }[]
       }
     }

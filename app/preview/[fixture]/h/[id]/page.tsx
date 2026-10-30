@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { pickDay, toDetailView } from "../../../../detail-view";
 import { HabitDetail } from "../../../../habit-detail";
-import { previewAdd, previewRemove, previewDone } from "../../../actions";
+import { previewAdd, previewRemove, previewDone, previewToken } from "../../../actions";
 import { fixtureRecent, fixtures, fixtureTaps, today } from "../../../fixtures";
 
 export async function generateMetadata({ params }: PageProps<"/preview/[fixture]/h/[id]">): Promise<Metadata> {
@@ -25,9 +25,11 @@ export default async function PreviewHabit({ params, searchParams }: PageProps<"
       now="14:30"
       backHref={`/preview/${fixture}`}
       editHref={`/preview/${fixture}/h/${id}/edit`}
+      stickerHref={`/preview/${fixture}/stickers/`}
       add={previewAdd}
       remove={previewRemove}
       restore={previewDone}
+      addSticker={previewToken}
     />
   );
 }

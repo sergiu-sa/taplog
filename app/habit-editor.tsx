@@ -191,6 +191,8 @@ export function HabitEditor({
                 <p>
                   Deletes {habit.name}
                   {habit.taps > 0 && ` and its ${habit.taps} ${habit.taps === 1 ? "tap" : "taps"}`} for good.
+                  {habit.stickers > 0 &&
+                    ` ${habit.stickers === 1 ? "Its sticker stays and asks" : `Its ${habit.stickers} stickers stay and ask`} for a habit on the next tap.`}
                 </p>
                 <button type="button" className="button" autoFocus aria-disabled={busy || undefined} onClick={() => run(remove!)}>
                   Delete {habit.name}

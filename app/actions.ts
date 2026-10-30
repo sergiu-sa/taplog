@@ -9,6 +9,8 @@ import { createClient } from "@/lib/supabase/server";
 export type Logged = { id: number; createdAt: string };
 export type Removed = { habitId: number; createdAt: string };
 export type Saved = { error: string } | null;
+// A new link's token, returned once, or why there isn't one.
+export type Made = { token: string } | { error: string };
 
 // "Add one at" sends an Oslo wall time; Undo after a removal sends the removed row's exact time.
 const WALL = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
@@ -99,6 +101,67 @@ export async function deleteHabit(id: number): Promise<string | void> {
   const { error } = await supabase.from("habits").delete().eq("id", id);
   if (error) return "Didn't save. Try again.";
   landOn("/");
+}
+
+// A label follows the rule for habit names, which the database checks too.
+function cleanLabel(label: unknown) {
+  const v = typeof label === "string" ? label.trim() : "";
+  return v.length >= 1 && v.length <= 40 ? v : null;
+}
+
+// The database keeps only the token's hash, so this is the one time the token is seen.
+export async function addSticker(habitId: number, label: string): Promise<Made> {
+  const supabase = await signedIn();
+  const clean = cleanLabel(label);
+  if (!Number.isSafeInteger(habitId)) return { error: "That habit is gone." };
+  if (!clean) return { error: "A name needs 1 to 40 characters." };
+  // new_sticker() raises no_data_found for a habit that's gone, someone else's or archived.
+  const { data, error } = await supabase.rpc("new_sticker", { habit_id: habitId, label: clean });
+  if (error?.code === "P0002") return { error: "That habit is gone." };
+  if (error) return { error: "Didn't save. Try again." };
+  revalidatePath("/", "layout");
+  return { token: data };
+}
+
+export async function renameSticker(id: number, label: string): Promise<string | void> {
+  const supabase = await signedIn();
+  const clean = cleanLabel(label);
+  if (!Number.isSafeInteger(id)) return "That sticker is gone.";
+  if (!clean) return "A name needs 1 to 40 characters.";
+  return updateSticker(supabase, id, { label: clean });
+}
+
+// The policy refuses a habit that isn't the session's own.
+export async function moveSticker(id: number, habitId: number): Promise<string | void> {
+  const supabase = await signedIn();
+  if (!Number.isSafeInteger(id) || !Number.isSafeInteger(habitId)) return "That sticker is gone.";
+  return updateSticker(supabase, id, { habit_id: habitId });
+}
+
+async function updateSticker(supabase: Awaited<ReturnType<typeof signedIn>>, id: number, fields: { label?: string; habit_id?: number }) {
+  const { data, error } = await supabase.from("stickers").update(fields).eq("id", id).select("id").maybeSingle();
+  if (error) return "Didn't save. Try again.";
+  if (!data) return "That sticker is gone.";
+  revalidatePath("/", "layout");
+}
+
+// The old link stops at once, so the sticker logs nothing until it holds the new one.
+export async function newLink(id: number): Promise<Made> {
+  const supabase = await signedIn();
+  if (!Number.isSafeInteger(id)) return { error: "That sticker is gone." };
+  const { data, error } = await supabase.rpc("new_link", { sticker_id: id });
+  if (error?.code === "P0002") return { error: "That sticker is gone." };
+  if (error) return { error: "Didn't save. Try again." };
+  return { token: data };
+}
+
+// Its taps stay, with no sticker, and read "Sticker" on their day.
+export async function removeSticker(id: number): Promise<string | void> {
+  const supabase = await signedIn();
+  if (!Number.isSafeInteger(id)) return "That sticker is gone.";
+  const { data, error } = await supabase.from("stickers").delete().eq("id", id).select("habit_id").maybeSingle();
+  if (error) return "Didn't save. Try again.";
+  landOn(data?.habit_id ? `/h/${data.habit_id}` : "/");
 }
 
 // Every page already visited is stale after these, and Back would restore one from the client

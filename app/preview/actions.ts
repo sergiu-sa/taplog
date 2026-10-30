@@ -1,6 +1,7 @@
 "use server";
 
 import type { Logged, Removed, Saved } from "../actions";
+import type { Made } from "../actions";
 
 // The preview's actions save nothing. The pause stands in for the round trip to the database,
 // so the pending lock can be exercised, and the log line counts how often each ran.
@@ -32,4 +33,12 @@ export async function previewDone(): Promise<string | void> {
   if (process.env.DESIGN_PREVIEW !== "1") return;
   await pause();
   console.log("preview archive, restore or delete");
+}
+
+// A made-up token in the real shape; no sticker anywhere has its hash, so it logs nothing.
+export async function previewToken(label?: string): Promise<Made> {
+  if (process.env.DESIGN_PREVIEW !== "1") return { error: "Preview only." };
+  await pause();
+  console.log(`preview sticker ${label ?? "new link"}`);
+  return { token: "PreviewPreviewPreview0" };
 }

@@ -14,6 +14,7 @@ const WEEKS = 5;
 export type HabitRecord = Pick<Tables<"habits">, "id" | "name" | "kind" | "color" | "archived_at"> & {
   daily_counts: Pick<Tables<"daily_counts">, "day" | "count">[];
   habit_targets: Pick<Tables<"habit_targets">, "from_day" | "target">[];
+  stickers?: Pick<Tables<"stickers">, "id" | "label" | "last_tap_at">[];
 };
 
 // Each logged day's count, and the first logged day: tracking starts there.

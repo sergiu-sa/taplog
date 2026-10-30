@@ -55,7 +55,7 @@ select throws_ok(
   '42501', null, 'a session cannot date a log in the future'
 );
 select throws_ok($$ select * from tap('x') $$, '42501', null, 'a session cannot call tap()');
-select throws_ok($$ select new_sticker(9001, 'x') $$, '42501', null, 'a session cannot call new_sticker()');
+select throws_ok($$ select new_sticker(9003, 'x') $$, 'P0002', null, 'a session cannot add a sticker to a habit of B');
 
 -- The tap route, which uses the secret key
 reset role;
@@ -80,7 +80,7 @@ select is(
 );
 select is_empty($$ select * from tap(repeat('0', 64)) $$, 'an unknown sticker logs nothing');
 
--- Moving a sticker is a plain update today, done from the SQL editor.
+-- Only postgres can move a sticker onto another owner's habit; the log follows the habit.
 reset role;
 update stickers set habit_id = 9003 where id = 9101;
 set local role service_role;
@@ -91,10 +91,13 @@ select is(
   '00000000-0000-0000-0000-00000000000b'::uuid, 'and the row belongs to that habit''s owner'
 );
 
--- Stickers made from the SQL editor
+-- Signed in as B, making a sticker
 reset role;
-
-create temp table made as select new_sticker(9003, 'Kitchen') as token;
+select set_config('request.jwt.claims', '{"sub": "00000000-0000-0000-0000-00000000000b", "role": "authenticated"}', true);
+set local role authenticated;
+select set_config('t.kitchen', new_sticker(9003, 'Kitchen'), true);
+reset role;
+create temp table made as select current_setting('t.kitchen') as token;
 select matches((select token from made), '^[A-Za-z0-9_-]{22}$', 'new_sticker returns a 22-character base64url token');
 select results_eq(
   $$ select user_id, label from stickers where token_hash = encode(sha256(convert_to((select token from made), 'UTF8')), 'hex') $$,
@@ -107,7 +110,11 @@ select is(
 );
 
 delete from habits where id = 9002;
-select is_empty($$ select * from tap(encode(sha256('a-lighter'), 'hex')) $$, 'a sticker whose habit was deleted logs nothing');
+select results_eq(
+  $$ select log_id, dup, sticker_id from tap(encode(sha256('a-lighter'), 'hex')) $$,
+  $$ values (null::bigint, null::boolean, 9102::bigint) $$,
+  'a sticker whose habit was deleted logs nothing and returns its id'
+);
 
 select * from finish();
 rollback;
