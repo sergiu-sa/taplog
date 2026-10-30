@@ -3,8 +3,10 @@ import type { CSSProperties } from "react";
 import { coil } from "@/lib/coil";
 import { addDays, formatDay, runBefore, targetOn, weekStart, type Kind } from "@/lib/habits";
 import type { Tables } from "@/lib/supabase/types";
+import type { Theme } from "@/lib/theme";
 import { HabitRow, type HabitView } from "./habit-row";
 import { PageTurn } from "./page-turn";
+import { ThemeSwitch } from "./theme-switch";
 import type { Add, Remove } from "./use-tally";
 
 const WEEKS = 5;
@@ -68,6 +70,7 @@ export function Dashboard({
   newHref = "/habits/new",
   add,
   remove,
+  theme,
 }: {
   today: string;
   habits: HabitView[];
@@ -78,6 +81,7 @@ export function Dashboard({
   newHref?: string;
   add: Add;
   remove: Remove;
+  theme?: Theme;
 }) {
   const cols = sheetCols(habits.length);
   return (
@@ -141,7 +145,10 @@ export function Dashboard({
               <p>The outlined day is today. Dots are days before tracking began or still to come.</p>
             </>
           )}
-          <p>Counts reset at midnight, Oslo time.</p>
+          <div>
+            <p>Counts reset at midnight, Oslo time.</p>
+            <ThemeSwitch theme={theme} />
+          </div>
         </footer>
       </div>
     </PageTurn>

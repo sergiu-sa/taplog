@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { readTheme } from "@/lib/theme";
 import { Dashboard, splitHabits } from "../../dashboard";
 import { previewAdd, previewRemove } from "../actions";
 import { fixtures, fixtureStickers, today } from "../fixtures";
@@ -23,6 +24,7 @@ export default async function Preview({ params }: PageProps<"/preview/[fixture]"
       newHref={`/preview/${fixture}/new`}
       add={previewAdd}
       remove={previewRemove}
+      theme={await readTheme()}
     />
   );
 }
