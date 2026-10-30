@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useOptimistic, useRef, useState, useTransition, type CSSProperties } from "react";
-import { addDays, formatDay, habitStatus, osloTime, todayStreak, type Kind } from "@/lib/habits";
+import { addDays, formatDay, habitStatus, osloTime, targetText, todayStreak, type Kind } from "@/lib/habits";
 import { arrived, curtainFrom, ease, gsap, useMotion } from "@/lib/motion";
 import type { Made } from "./actions";
 import { Coil } from "./coil";
@@ -121,7 +121,7 @@ export function HabitDetail({
               {name}
             </h1>
             <p className="poster__kind">
-              {kind === "goal" ? "Goal" : "Limit"} · {kind === "goal" ? `${target} a day` : `at most ${target} a day`} ·{" "}
+              {kind === "goal" ? "Goal" : "Limit"} · {targetText(kind, target)} ·{" "}
               <Link href={editHref} prefetch={false}>
                 Edit
               </Link>
@@ -168,11 +168,14 @@ export function HabitDetail({
           {/* Keyed, so a removal's Undo never follows the list to another day. */}
           <DaySection key={view.day} view={view} today={today} now={now} count={count} change={tally.change} add={add} remove={remove} />
 
-          {/* One column on desktop, kept in view beside a long day list. */}
-          <div className="side">
-            {first && <Hours hours={view.hours} />}
-            <Stickers name={name} archived={view.archived !== null} stickers={view.stickers} href={stickerHref} add={addSticker} />
-          </div>
+          {/* One column on desktop. An archived habit with no taps and no stickers has none, and
+              its day takes the row. */}
+          {(first || view.archived === null || view.stickers.length > 0) && (
+            <div className="side">
+              {first && <Hours hours={view.hours} />}
+              <Stickers name={name} archived={view.archived !== null} stickers={view.stickers} href={stickerHref} add={addSticker} />
+            </div>
+          )}
         </main>
 
         <footer className="colophon">

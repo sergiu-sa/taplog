@@ -1828,13 +1828,18 @@
       padding-right: calc(var(--gutter) / 2 + var(--gutter));
       border-right: 1px solid var(--color-etch);
     }
-    /* A long day list scrolls past the hours and stickers, which stay in view beside it. */
+    /* Not sticky: with a link panel open it can be taller than the screen, and sticking would
+       keep Copy link out of reach until the day list ends. */
     .side {
       grid-column: 7 / -1;
-      position: sticky;
-      top: 0;
-      align-self: start;
       padding-left: calc(var(--gutter) / 2);
+    }
+    /* With no side column, the day takes the row. */
+    .day:last-child {
+      grid-column: 1 / -1;
+      margin-right: 0;
+      padding-right: 0;
+      border-right: 0;
     }
     .poster {
       grid-template-columns: 23.75rem minmax(0, 1fr);

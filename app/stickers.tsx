@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, useTransition, type CSSProperties } from "react";
-import { formatDay } from "@/lib/habits";
+import { formatDay, targetText } from "@/lib/habits";
 import { ease, gsap, useMotion } from "@/lib/motion";
 import { Coil } from "./coil";
 import type { Made } from "./actions";
-import type { HabitChoice, StickerRow, StickerView } from "./detail-view";
+import type { StickerRow, StickerView } from "./detail-view";
 
 type Run = () => Promise<string | void>;
 
@@ -22,7 +22,6 @@ function Mark({ live }: { live: boolean }) {
   );
 }
 
-const perDay = (h: HabitChoice) => (h.kind === "goal" ? `${h.target} a day` : `at most ${h.target} a day`);
 // Non-breaking inside each part, so a narrow column breaks only after the comma.
 const tapsLine = (taps: number, last: string | null) =>
   !last ? "Not tapped yet" : taps === 0 ? `Last tapped\u00a0${last}` : `${taps}\u00a0${taps === 1 ? "tap" : "taps"}, last\u00a0${last}`;
@@ -41,7 +40,7 @@ export function Stickers({
   href: string;
   add: (label: string) => Promise<Made>;
 }) {
-  const [made, setMade] = useState<{ label: string; token: string } | null>(null);
+  const [made, setMade] = useState<{ label: string; link: string } | null>(null);
   // Next keeps a visited page alive but hidden; dropping the token there means Back never shows it again.
   useLayoutEffect(() => () => setMade(null), []);
   if (archived && stickers.length === 0) return null;
@@ -70,7 +69,7 @@ export function Stickers({
         <p className="stickers__note">None yet. Each sticker gets a link of its own.</p>
       )}
       {made ? (
-        <LinkPanel label={made.label} token={made.token} onDone={() => setMade(null)} />
+        <LinkPanel label={made.label} link={made.link} onDone={() => setMade(null)} />
       ) : (
         !archived && (
           <LineForm
@@ -80,7 +79,7 @@ export function Stickers({
             send={async (label) => {
               const r = await add(label);
               if ("error" in r) return r.error;
-              setMade({ label, token: r.token });
+              setMade({ label, link: r.link });
             }}
           />
         )
@@ -153,16 +152,24 @@ function LineForm({
   );
 }
 
-// The link exists only here, in this component's state: the database keeps its hash. It's a
-// field, never a link, because opening it logs a tap.
-function LinkPanel({ label, token, replaced, onDone }: { label: string; token: string; replaced?: boolean; onDone: () => void }) {
+// The link exists only here, in this component's state: the database keeps its token's hash.
+// It's a field, never an <a>, because opening it logs a tap.
+function LinkPanel({ label, link, replaced, onDone }: { label: string; link: string; replaced?: boolean; onDone: () => void }) {
   const root = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
-  const url = `${location.origin}/t/${token}`;
 
   // The new sticker's turns draw in from the chip: an antenna getting its current.
-  useMotion(root, () => void gsap.from(".mark .coil__turn", { strokeDasharray: "1 1", strokeDashoffset: 1, duration: 0.7, ease: ease.out, stagger: 0.06 }), []);
+  useMotion(
+    root,
+    () =>
+      void gsap.fromTo(
+        ".mark .coil__turn",
+        { strokeDasharray: "1 1", strokeDashoffset: 1 },
+        { strokeDashoffset: 0, duration: 0.7, ease: ease.out, stagger: 0.06, autoRound: false },
+      ),
+    [],
+  );
   useEffect(() => {
     if (!copied) return;
     const timer = gsap.delayedCall(2, () => setCopied(false));
@@ -171,7 +178,7 @@ function LinkPanel({ label, token, replaced, onDone }: { label: string; token: s
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(link);
       setCopied(true);
     } catch {
       field.current?.select();
@@ -184,7 +191,7 @@ function LinkPanel({ label, token, replaced, onDone }: { label: string; token: s
       <h3 id="panel-title" className="panel__title">
         Link for {label}
       </h3>
-      <input ref={field} className="panel__link" readOnly value={url} onFocus={(e) => e.target.select()} aria-label={`Link for ${label}`} />
+      <input ref={field} className="panel__link" readOnly value={link} onFocus={(e) => e.target.select()} aria-label={`Link for ${label}`} />
       {/* Opened by Add or New link, so focus follows to the one thing to do next. */}
       <button type="button" className="button panel__copy" autoFocus onClick={copy}>
         {copied ? "Copied" : "Copy link"}
@@ -229,11 +236,11 @@ export function StickerPage({
   const { habit, label } = view;
   const live = habit !== null && !habit.archived;
   const others = view.habits.filter((h) => h.id !== habit?.id);
-  const [token, setToken] = useState<string | null>(null);
+  const [link, setLink] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<"link" | "remove" | null>(null);
   const [error, setError] = useState("");
   const [busy, startTransition] = useTransition();
-  useLayoutEffect(() => () => setToken(null), []);
+  useLayoutEffect(() => () => setLink(null), []);
 
   function run(action: () => Promise<string | void | Made>) {
     if (busy) return;
@@ -243,8 +250,8 @@ export function StickerPage({
         const r = await action();
         if (typeof r === "string") setError(r);
         else if (r && "error" in r) setError(r.error);
-        else if (r && "token" in r) {
-          setToken(r.token);
+        else if (r && "link" in r) {
+          setLink(r.link);
           setConfirm(null);
         }
       } catch {
@@ -308,7 +315,7 @@ export function StickerPage({
                       <span className="pick__name">
                         <span className="trace">{h.name}</span>
                       </span>
-                      <span className="pick__kind">{perDay(h)}</span>
+                      <span className="pick__kind">{targetText(h.kind, h.target)}</span>
                     </button>
                   </li>
                 ))}
@@ -324,9 +331,9 @@ export function StickerPage({
             <LineForm label="Name" button="Save" initial={label} send={rename} />
           </section>
 
-          {token ? (
+          {link ? (
             <section className="pick" aria-label="New link">
-              <LinkPanel label={label} token={token} replaced onDone={() => setToken(null)} />
+              <LinkPanel label={label} link={link} replaced onDone={() => setLink(null)} />
             </section>
           ) : (
             <div className="editor__more sticker-page__more">

@@ -1,6 +1,7 @@
 "use server";
 
 import { refresh, revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect, RedirectType } from "next/navigation";
 import { MAX_TARGET, minTarget } from "@/lib/habits";
 import { PALETTE } from "@/lib/palette";
@@ -9,8 +10,8 @@ import { createClient } from "@/lib/supabase/server";
 export type Logged = { id: number; createdAt: string };
 export type Removed = { habitId: number; createdAt: string };
 export type Saved = { error: string } | null;
-// A new link's token, returned once, or why there isn't one.
-export type Made = { token: string } | { error: string };
+// A new sticker link, returned once, or why there isn't one.
+export type Made = { link: string } | { error: string };
 
 // "Add one at" sends an Oslo wall time; Undo after a removal sends the removed row's exact time.
 const WALL = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
@@ -60,11 +61,11 @@ export async function removeLog(id: number): Promise<Removed | null> {
 export async function saveHabit(id: number | null, _prev: Saved, form: FormData): Promise<Saved> {
   const supabase = await signedIn();
   if (id !== null && !Number.isSafeInteger(id)) return { error: "That habit is gone." };
-  const name = String(form.get("name") ?? "").trim();
+  const name = cleanName(form.get("name"));
   const kind = form.get("kind");
   const target = Number(form.get("target"));
   const color = form.get("color");
-  if (!name || name.length > 40) return { error: "A name needs 1 to 40 characters." };
+  if (!name) return { error: "A name needs 1 to 40 characters." };
   if (kind !== "goal" && kind !== "limit") return { error: "Pick goal or limit." };
   if (!Number.isInteger(target) || target < minTarget(kind) || target > MAX_TARGET) {
     return { error: `The target runs from ${minTarget(kind)} to ${MAX_TARGET}.` };
@@ -103,16 +104,23 @@ export async function deleteHabit(id: number): Promise<string | void> {
   landOn("/");
 }
 
-// A label follows the rule for habit names, which the database checks too.
-function cleanLabel(label: unknown) {
-  const v = typeof label === "string" ? label.trim() : "";
+// Habit names and sticker labels: the database checks the same rule.
+function cleanName(name: unknown) {
+  const v = typeof name === "string" ? name.trim() : "";
   return v.length >= 1 && v.length <= 40 ? v : null;
+}
+
+// A tag keeps its link for good, so the link names production even when the sticker is made on
+// a preview deployment. Locally there's only the server that was asked.
+async function linkTo(token: string) {
+  const host = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  return `${host ? `https://${host}` : (await headers()).get("origin")}/t/${token}`;
 }
 
 // The database keeps only the token's hash, so this is the one time the token is seen.
 export async function addSticker(habitId: number, label: string): Promise<Made> {
   const supabase = await signedIn();
-  const clean = cleanLabel(label);
+  const clean = cleanName(label);
   if (!Number.isSafeInteger(habitId)) return { error: "That habit is gone." };
   if (!clean) return { error: "A name needs 1 to 40 characters." };
   // new_sticker() raises no_data_found for a habit that's gone, someone else's or archived.
@@ -120,12 +128,12 @@ export async function addSticker(habitId: number, label: string): Promise<Made> 
   if (error?.code === "P0002") return { error: "That habit is gone." };
   if (error) return { error: "Didn't save. Try again." };
   revalidatePath("/", "layout");
-  return { token: data };
+  return { link: await linkTo(data) };
 }
 
 export async function renameSticker(id: number, label: string): Promise<string | void> {
   const supabase = await signedIn();
-  const clean = cleanLabel(label);
+  const clean = cleanName(label);
   if (!Number.isSafeInteger(id)) return "That sticker is gone.";
   if (!clean) return "A name needs 1 to 40 characters.";
   return updateSticker(supabase, id, { label: clean });
@@ -140,6 +148,8 @@ export async function moveSticker(id: number, habitId: number): Promise<string |
 
 async function updateSticker(supabase: Awaited<ReturnType<typeof signedIn>>, id: number, fields: { label?: string; habit_id?: number }) {
   const { data, error } = await supabase.from("stickers").update(fields).eq("id", id).select("id").maybeSingle();
+  // The habit it was moved to was deleted after the page loaded.
+  if (error?.code === "23503") return "That habit is gone.";
   if (error) return "Didn't save. Try again.";
   if (!data) return "That sticker is gone.";
   revalidatePath("/", "layout");
@@ -152,7 +162,7 @@ export async function newLink(id: number): Promise<Made> {
   const { data, error } = await supabase.rpc("new_link", { sticker_id: id });
   if (error?.code === "P0002") return { error: "That sticker is gone." };
   if (error) return { error: "Didn't save. Try again." };
-  return { token: data };
+  return { link: await linkTo(data) };
 }
 
 // Its taps stay, with no sticker, and read "Sticker" on their day.
@@ -161,7 +171,8 @@ export async function removeSticker(id: number): Promise<string | void> {
   if (!Number.isSafeInteger(id)) return "That sticker is gone.";
   const { data, error } = await supabase.from("stickers").delete().eq("id", id).select("habit_id").maybeSingle();
   if (error) return "Didn't save. Try again.";
-  landOn(data?.habit_id ? `/h/${data.habit_id}` : "/");
+  if (!data) return "That sticker is gone.";
+  landOn(data.habit_id ? `/h/${data.habit_id}` : "/");
 }
 
 // Every page already visited is stale after these, and Back would restore one from the client

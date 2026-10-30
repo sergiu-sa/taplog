@@ -1,7 +1,7 @@
 "use server";
 
-import type { Logged, Removed, Saved } from "../actions";
-import type { Made } from "../actions";
+import { headers } from "next/headers";
+import type { Logged, Made, Removed, Saved } from "../actions";
 
 // The preview's actions save nothing. The pause stands in for the round trip to the database,
 // so the pending lock can be exercised, and the log line counts how often each ran.
@@ -40,5 +40,5 @@ export async function previewToken(label?: string): Promise<Made> {
   if (process.env.DESIGN_PREVIEW !== "1") return { error: "Preview only." };
   await pause();
   console.log(`preview sticker ${label ?? "new link"}`);
-  return { token: "PreviewPreviewPreview0" };
+  return { link: `${(await headers()).get("origin")}/t/PreviewPreviewPreview0` };
 }
