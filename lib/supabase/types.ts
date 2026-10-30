@@ -176,10 +176,7 @@ export type Database = {
       }
     }
     Functions: {
-      new_link: {
-        Args: { sticker_id: number }
-        Returns: string
-      }
+      new_link: { Args: { sticker_id: number }; Returns: string }
       new_sticker: {
         Args: { habit_id: number; label: string }
         Returns: string
