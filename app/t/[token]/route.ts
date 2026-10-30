@@ -14,6 +14,8 @@ export async function GET(request: NextRequest, ctx: RouteContext<"/t/[token]">)
   const hash = createHash("sha256").update(token).digest("hex");
   const { data } = await supabaseAdmin.rpc("tap", { hash }).maybeSingle().throwOnError();
   if (!data) return new Response("Unknown sticker", { status: 404 });
+  // No habit, or an archived one: nothing was logged, and the sticker's page asks which habit.
+  if (data.log_id === null) return Response.redirect(new URL(`/stickers/${data.sticker_id}`, request.url), 303);
 
   const params = new URLSearchParams({ id: String(data.log_id), sig: signId(data.log_id) });
   if (data.dup) params.set("dup", "1");

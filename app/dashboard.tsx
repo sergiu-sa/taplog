@@ -14,6 +14,7 @@ const WEEKS = 5;
 export type HabitRecord = Pick<Tables<"habits">, "id" | "name" | "kind" | "color" | "archived_at"> & {
   daily_counts: Pick<Tables<"daily_counts">, "day" | "count">[];
   habit_targets: Pick<Tables<"habit_targets">, "from_day" | "target">[];
+  stickers?: Pick<Tables<"stickers">, "id" | "label" | "last_tap_at">[];
 };
 
 // Each logged day's count, and the first logged day: tracking starts there.
@@ -61,7 +62,9 @@ export function Dashboard({
   today,
   habits,
   archived,
+  loose,
   habitHref = "/h/",
+  stickerHref = "/stickers/",
   newHref = "/habits/new",
   add,
   remove,
@@ -69,7 +72,9 @@ export function Dashboard({
   today: string;
   habits: HabitView[];
   archived: Shelved[];
+  loose: Shelved[]; // stickers whose habit was deleted: no other page lists them
   habitHref?: string;
+  stickerHref?: string;
   newHref?: string;
   add: Add;
   remove: Remove;
@@ -102,7 +107,8 @@ export function Dashboard({
                   <span className="shelf__mark" aria-hidden="true" />
                   <span className="trace">New habit</span>
                 </Link>
-                <Archived archived={archived} habitHref={habitHref} />
+                <ShelfLine title="Archived" items={archived} href={habitHref} />
+                <ShelfLine title="Stickers with no habit" items={loose} href={stickerHref} />
               </div>
             </>
           ) : (
@@ -122,7 +128,8 @@ export function Dashboard({
                 <EmptySlot />
                 New habit
               </Link>
-              <Archived archived={archived} habitHref={habitHref} />
+              <ShelfLine title="Archived" items={archived} href={habitHref} />
+              <ShelfLine title="Stickers with no habit" items={loose} href={stickerHref} />
             </div>
           )}
         </main>
@@ -141,15 +148,15 @@ export function Dashboard({
   );
 }
 
-function Archived({ archived, habitHref }: { archived: Shelved[]; habitHref: string }) {
-  if (archived.length === 0) return null;
+function ShelfLine({ title, items, href }: { title: string; items: Shelved[]; href: string }) {
+  if (items.length === 0) return null;
   return (
     <p className="shelf__archived">
-      Archived:{" "}
-      {archived.map((h, i) => (
+      {title}:{" "}
+      {items.map((h, i) => (
         <span key={h.id}>
           {i > 0 && ", "}
-          <Link href={`${habitHref}${h.id}`} prefetch={false}>
+          <Link href={`${href}${h.id}`} prefetch={false}>
             {h.name}
           </Link>
         </span>

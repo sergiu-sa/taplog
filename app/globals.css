@@ -176,7 +176,9 @@
 
   .habit,
   .detail,
-  .editor {
+  .editor,
+  .sticker-page,
+  .pick__habit {
     --trace: light-dark(color-mix(in oklab, var(--habit) 80%, black), var(--habit));
     --glint: color-mix(in oklab, var(--habit) 45%, white);
   }
@@ -1185,6 +1187,283 @@
     }
   }
 
+  /* Stickers: each drawn as a small three-turn coil, lit in its habit's colour while it logs. */
+  .mark {
+    flex: none;
+    display: block;
+    width: 40px;
+    aspect-ratio: 1;
+  }
+  .stickers__note {
+    margin-top: 6px;
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: 500;
+  }
+  .stickers__note a {
+    color: var(--color-ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .stickers__list {
+    margin-top: 8px;
+  }
+  .sticker,
+  .pick__habit {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    /* Out into the gutter, so the focus ring clears the text at both ends. */
+    width: calc(100% + 16px);
+    margin-inline: -8px;
+    padding-inline: 8px;
+    min-height: 56px;
+    border-radius: 10px;
+    text-align: left;
+  }
+  .sticker__label,
+  .pick__name {
+    overflow: hidden;
+    /* Room inside the clip for the trace under the descenders. */
+    padding-bottom: 8px;
+    margin-bottom: -8px;
+    font-size: var(--text-body);
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* The trace sits under the descenders, as under "New habit". */
+  .sticker .trace,
+  .pick__habit .trace {
+    display: inline-block;
+    padding-bottom: 8px;
+    margin-bottom: -8px;
+    background-position:
+      left bottom 0.15rem,
+      left bottom 0.15rem;
+  }
+  .sticker__last,
+  .pick__kind {
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .sticker:focus-visible,
+  .pick__habit:focus-visible {
+    outline-offset: 2px;
+  }
+  .sticker:focus-visible .trace,
+  .pick__habit:focus-visible .trace {
+    background-size:
+      100% 2px,
+      var(--rest) 1px;
+  }
+  .pick ul {
+    margin-top: 8px;
+  }
+  .pick__habit {
+    cursor: pointer;
+  }
+  .pick__habit[aria-disabled] {
+    cursor: progress;
+  }
+  .pick__swatch {
+    width: 22px;
+    margin-inline: 9px;
+    aspect-ratio: 1;
+    border-radius: 22%;
+    background: var(--trace);
+    transition: box-shadow 0.35s var(--ease-soft);
+  }
+  .pick__habit:focus-visible .pick__swatch {
+    box-shadow:
+      0 0 0 3px var(--color-ground),
+      0 0 0 4.5px var(--color-etch);
+  }
+  @media (hover: hover) {
+    .sticker:hover .trace,
+    .pick__habit:hover .trace {
+      background-size:
+        100% 2px,
+        var(--rest) 1px;
+    }
+    .pick__habit:hover .pick__swatch {
+      box-shadow:
+        0 0 0 3px var(--color-ground),
+        0 0 0 4.5px var(--color-etch);
+    }
+  }
+
+  /* A label and one field with its button: "Add a sticker", a sticker's name. */
+  .line-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px var(--gutter);
+    margin-top: 14px;
+  }
+  .line-form label {
+    grid-column: 1 / -1;
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: 500;
+  }
+  .line-form input::placeholder {
+    color: var(--color-muted);
+    opacity: 1;
+  }
+  .line-form .day__error {
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+
+  /* The new link, shown once. A field, never a link: opening it would log a tap. */
+  .panel {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 14px 12px;
+    margin-top: 14px;
+  }
+  .panel .mark {
+    width: 56px;
+  }
+  .panel__title {
+    font-size: var(--text-name);
+    line-height: var(--text-name--line-height);
+    letter-spacing: var(--text-name--letter-spacing);
+    font-weight: var(--text-name--font-weight);
+  }
+  .panel > :not(.mark, .panel__title) {
+    grid-column: 1 / -1;
+  }
+  .panel__link {
+    width: 100%;
+    height: 48px;
+    min-width: 0;
+    padding-inline: 12px;
+    border: 1px solid var(--color-ink);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--color-ink);
+    font-size: max(1rem, var(--text-meta));
+    text-overflow: ellipsis;
+  }
+  .panel__copy {
+    width: 100%;
+    height: 56px;
+    border-radius: 12px;
+    font-size: var(--text-body);
+  }
+  /* A real sequence, so the steps are numbered. */
+  .panel__steps {
+    display: grid;
+    gap: 8px;
+    counter-reset: step;
+    font-size: var(--text-body);
+    line-height: 1.4;
+  }
+  .panel__steps li {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 1fr);
+    counter-increment: step;
+  }
+  .panel__steps li::before {
+    content: counter(step);
+    color: var(--color-muted);
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+  .panel__note {
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: 500;
+    text-wrap: pretty;
+  }
+  .panel__done {
+    justify-self: start;
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    font-weight: 500;
+  }
+
+  /* /stickers/[id]: what it logs to beside its coil, then the habits it can move to. */
+  .sticker-page {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    column-gap: var(--gutter);
+    padding-top: 18px;
+    border-top: 1px solid var(--color-etch);
+  }
+  .sticker-page > :not(.sticker-page__state, .sticker-page__coil) {
+    grid-column: 1 / -1;
+  }
+  .sticker-page__state {
+    grid-column: 1 / 4;
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    gap: 6px;
+    padding-bottom: 28px;
+  }
+  .sticker-page__coil {
+    grid-column: 4 / 7;
+    padding-bottom: 18px;
+  }
+  .sticker-page__logs {
+    font-size: var(--text-name);
+    line-height: var(--text-name--line-height);
+    letter-spacing: var(--text-name--letter-spacing);
+    font-weight: var(--text-name--font-weight);
+    text-wrap: balance;
+  }
+  .sticker-page__meta {
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: 500;
+  }
+  .sticker-page__ask {
+    margin-block: 8px 10px;
+    font-size: var(--text-body);
+    line-height: 1.4;
+    text-wrap: pretty;
+  }
+  .sticker-page .line-form {
+    margin-top: 0;
+  }
+  .sticker-page__more {
+    margin-top: 0;
+  }
+  @media (width >= 68.75rem) {
+    .sticker-page {
+      grid-template-columns: 23.75rem minmax(0, 1fr);
+      column-gap: 64px;
+      padding-top: 32px;
+    }
+    .sticker-page > * {
+      max-width: 36rem;
+    }
+    .sticker-page > :not(.sticker-page__state, .sticker-page__coil) {
+      grid-column: 2;
+    }
+    .sticker-page__state {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .sticker-page__coil {
+      grid-column: 1;
+      grid-row: 1 / span 6;
+      max-width: none;
+    }
+  }
+
   /* Habit page: the coil as a poster, then the year, the day and the hours. */
   .poster {
     display: grid;
@@ -1278,7 +1557,9 @@
   }
   .year,
   .day,
-  .hours {
+  .hours,
+  .stickers,
+  .pick {
     padding-block: 18px 28px;
     border-top: 1px solid var(--color-etch);
   }
@@ -1480,7 +1761,8 @@
     font-size: var(--text-body);
     font-weight: 500;
   }
-  .add-at input {
+  .add-at input,
+  .line-form input {
     height: 44px;
     min-width: 0;
     padding-inline: 12px;
@@ -1546,20 +1828,18 @@
       padding-right: calc(var(--gutter) / 2 + var(--gutter));
       border-right: 1px solid var(--color-etch);
     }
-    /* A habit with nothing logged has no hours, so its day takes the row. */
+    /* Not sticky: with a link panel open it can be taller than the screen, and sticking would
+       keep Copy link out of reach until the day list ends. */
+    .side {
+      grid-column: 7 / -1;
+      padding-left: calc(var(--gutter) / 2);
+    }
+    /* With no side column, the day takes the row. */
     .day:last-child {
       grid-column: 1 / -1;
       margin-right: 0;
       padding-right: 0;
       border-right: 0;
-    }
-    /* A long day list scrolls past the strip, which stays in view beside it. */
-    .hours {
-      grid-column: 7 / -1;
-      position: sticky;
-      top: 0;
-      align-self: start;
-      padding-left: calc(var(--gutter) / 2);
     }
     .poster {
       grid-template-columns: 23.75rem minmax(0, 1fr);

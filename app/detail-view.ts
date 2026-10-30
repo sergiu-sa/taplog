@@ -1,4 +1,4 @@
-import { addDays, bestStreak, osloDay, osloHour, osloTime, perDay, runBefore, targetOn, weekStart, type Kind } from "@/lib/habits";
+import { addDays, bestStreak, formatDay, osloDay, osloHour, osloTime, perDay, runBefore, targetOn, weekStart, type Kind } from "@/lib/habits";
 import { countsOf, type HabitRecord } from "./dashboard";
 import type { Day } from "./day-cells";
 
@@ -7,6 +7,17 @@ export const WEEKS = 53;
 
 export type Tap = { id: number; createdAt: string; time: string; label: string | null };
 type TapRecord = { id: number; created_at: string; source: string; stickers: { label: string } | null };
+
+export type StickerRow = { id: number; label: string; lastTap: string | null };
+
+// "today 14:02", "yesterday 09:15", or the day: when a sticker was last held to the phone.
+export function lastTap(at: string | null, today: string) {
+  if (!at) return null;
+  const day = osloDay(at);
+  if (day === today) return `today\u00a0${osloTime(at)}`;
+  if (day === addDays(today, -1)) return `yesterday\u00a0${osloTime(at)}`;
+  return formatDay(day);
+}
 
 export type DetailView = {
   id: number;
@@ -26,6 +37,7 @@ export type DetailView = {
   dayCount: number;
   taps: Tap[];
   hours: number[];
+  stickers: StickerRow[];
 };
 
 // The day the stepper or the heatmap asked for: a real date, never after today.
@@ -70,6 +82,7 @@ export function toDetailView(h: HabitRecord, today: string, day: string, taps: T
       label: t.stickers?.label ?? (t.source === "nfc" ? "Sticker" : null),
     })),
     hours,
+    stickers: (h.stickers ?? []).map((s) => ({ id: s.id, label: s.label, lastTap: lastTap(s.last_tap_at, today) })),
   };
 }
 
@@ -81,6 +94,7 @@ export type EditorView = {
   color: string;
   archived: boolean;
   taps: number; // all of them: the kind locks at the first, and Delete says how many go
+  stickers: number;
 };
 
 export function toEditorView(h: HabitRecord, today: string): EditorView {
@@ -92,5 +106,34 @@ export function toEditorView(h: HabitRecord, today: string): EditorView {
     color: h.color,
     archived: h.archived_at !== null,
     taps: h.daily_counts.reduce((n, r) => n + r.count!, 0),
+    stickers: h.stickers?.length ?? 0,
+  };
+}
+
+export type HabitChoice = { id: number; name: string; kind: Kind; target: number; color: string };
+
+export type StickerView = {
+  id: number;
+  label: string;
+  taps: number;
+  lastTap: string | null;
+  habit: (HabitChoice & { archived: boolean }) | null;
+  habits: HabitChoice[]; // the active ones it can be moved to
+};
+
+type StickerSource = { id: number; label: string; last_tap_at: string | null; habit_id: number | null; taps: number };
+type PickSource = Pick<HabitRecord, "id" | "name" | "kind" | "color" | "archived_at" | "habit_targets">;
+
+// `habits` are all the owner's, archived too: the sticker's own habit may be one of them.
+export function toStickerView(s: StickerSource, habits: PickSource[], today: string): StickerView {
+  const pick = (h: PickSource): HabitChoice => ({ id: h.id, name: h.name, kind: h.kind as Kind, target: targetOn(h.habit_targets, today), color: h.color });
+  const own = habits.find((h) => h.id === s.habit_id);
+  return {
+    id: s.id,
+    label: s.label,
+    taps: s.taps,
+    lastTap: lastTap(s.last_tap_at, today),
+    habit: own ? { ...pick(own), archived: own.archived_at !== null } : null,
+    habits: habits.filter((h) => !h.archived_at).map(pick),
   };
 }

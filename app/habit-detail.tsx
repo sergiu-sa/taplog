@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useOptimistic, useRef, useState, useTransition, type CSSProperties } from "react";
-import { addDays, formatDay, habitStatus, osloTime, todayStreak, type Kind } from "@/lib/habits";
+import { addDays, formatDay, habitStatus, osloTime, targetText, todayStreak, type Kind } from "@/lib/habits";
 import { arrived, curtainFrom, ease, gsap, useMotion } from "@/lib/motion";
+import type { Made } from "./actions";
 import { Coil } from "./coil";
 import { CoilButton } from "./coil-button";
 import { PageTurn } from "./page-turn";
 import { CellKey, toCells, type Cell } from "./day-cells";
 import { WEEKS, type DetailView, type Tap } from "./detail-view";
+import { Stickers } from "./stickers";
 import { UNDO_S, useTally, type Add, type Remove } from "./use-tally";
 
 export function HabitDetail({
@@ -18,18 +20,22 @@ export function HabitDetail({
   now,
   backHref = "/",
   editHref,
+  stickerHref = "/stickers/",
   add,
   remove,
   restore,
+  addSticker,
 }: {
   view: DetailView;
   today: string;
   now: string; // the Oslo time the server rendered at, for the time field
   backHref?: string;
   editHref: string;
+  stickerHref?: string;
   add: Add;
   remove: Remove;
   restore: () => Promise<string | void>;
+  addSticker: (label: string) => Promise<Made>;
 }) {
   const { id, name, kind, target } = view;
   const tally = useTally(view, add, remove);
@@ -115,7 +121,7 @@ export function HabitDetail({
               {name}
             </h1>
             <p className="poster__kind">
-              {kind === "goal" ? "Goal" : "Limit"} · {kind === "goal" ? `${target} a day` : `at most ${target} a day`} ·{" "}
+              {kind === "goal" ? "Goal" : "Limit"} · {targetText(kind, target)} ·{" "}
               <Link href={editHref} prefetch={false}>
                 Edit
               </Link>
@@ -162,7 +168,14 @@ export function HabitDetail({
           {/* Keyed, so a removal's Undo never follows the list to another day. */}
           <DaySection key={view.day} view={view} today={today} now={now} count={count} change={tally.change} add={add} remove={remove} />
 
-          {first && <Hours hours={view.hours} />}
+          {/* One column on desktop. An archived habit with no taps and no stickers has none, and
+              its day takes the row. */}
+          {(first || view.archived === null || view.stickers.length > 0) && (
+            <div className="side">
+              {first && <Hours hours={view.hours} />}
+              <Stickers name={name} archived={view.archived !== null} stickers={view.stickers} href={stickerHref} add={addSticker} />
+            </div>
+          )}
         </main>
 
         <footer className="colophon">

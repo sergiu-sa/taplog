@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { addDays, osloDay, osloTime } from "@/lib/habits";
 import { createClient } from "@/lib/supabase/server";
-import { addLog, removeLog, setArchived } from "../../actions";
+import { addLog, addSticker, removeLog, setArchived } from "../../actions";
 import { pickDay, toDetailView } from "../../detail-view";
 import { HabitDetail } from "../../habit-detail";
 import { loadHabit } from "./habit";
@@ -58,6 +58,7 @@ export default async function HabitPage({ params, searchParams }: PageProps<"/h/
       add={addLog}
       remove={removeLog}
       restore={setArchived.bind(null, id, false)}
+      addSticker={addSticker.bind(null, id)}
     />
   );
 }

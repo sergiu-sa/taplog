@@ -12,6 +12,7 @@ export const toneClass: Record<Tone, string> = {
 // habits_daily_target_check in the database holds the same range.
 export const MAX_TARGET = 20;
 export const minTarget = (kind: Kind) => (kind === "goal" ? 1 : 0);
+export const targetText = (kind: Kind, target: number) => (kind === "goal" ? `${target} a day` : `at most ${target} a day`);
 
 // A goal is met at count >= target; a limit holds while count <= target.
 export function onTrack(kind: Kind, count: number, target: number) {

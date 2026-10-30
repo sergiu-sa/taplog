@@ -100,7 +100,11 @@ select results_eq(
 
 -- The tap route, with the secret key
 set local role service_role;
-select is_empty($$ select * from tap(encode(sha256('a-mirror'), 'hex')) $$, 'a sticker on an archived habit logs nothing');
+select results_eq(
+  $$ select log_id, dup, sticker_id from tap(encode(sha256('a-mirror'), 'hex')) $$,
+  $$ values (null::bigint, null::boolean, 9102::bigint) $$,
+  'a sticker on an archived habit logs nothing and returns its id'
+);
 reset role;
 update habits set archived_at = null where id = 9002;
 set local role service_role;

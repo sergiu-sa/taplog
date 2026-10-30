@@ -32,6 +32,6 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-// Only the dashboard, the habit pages and the editor (and their Server Actions, which POST to
-// them) read the session. Taps on /t and /logged never pay for this.
-export const config = { matcher: ["/", "/h/:id", "/h/:id/edit", "/habits/new"] };
+// Only the dashboard, the habit and sticker pages and the editor (and their Server Actions,
+// which POST to them) read the session. Taps on /t and /logged never pay for this.
+export const config = { matcher: ["/", "/h/:id", "/h/:id/edit", "/habits/new", "/stickers/:id"] };

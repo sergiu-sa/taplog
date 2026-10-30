@@ -18,6 +18,17 @@ function series(from: string, f: (i: number, day: string) => number) {
 type Targets = HabitRecord["habit_targets"];
 const always = (target: number): Targets => [{ from_day: today, target }];
 
+// Taps here are made up like the counts. Front door has no habit, so its page asks which;
+// Music stand is on Guitar, archived in `many`.
+export const fixtureStickers = [
+  { id: 11, habit_id: 1, label: "Water bottle", last_tap_at: `${today}T12:02:00Z`, taps: 212 },
+  { id: 12, habit_id: 1, label: "Desk", last_tap_at: null, taps: 0 },
+  { id: 13, habit_id: 2, label: "Lighter case", last_tap_at: `${today}T11:40:00Z`, taps: 148 },
+  { id: 14, habit_id: 8, label: "Music stand", last_tap_at: "2026-10-12T16:05:00Z", taps: 41 },
+  { id: 15, habit_id: null, label: "Front door", last_tap_at: `${today}T06:12:00Z`, taps: 0 },
+  { id: 16, habit_id: 3, label: "Gym bag", last_tap_at: "2026-10-21T16:30:00Z", taps: 23 },
+];
+
 const habit = (id: number, name: string, kind: string, habit_targets: Targets, color: string, daily_counts: HabitRecord["daily_counts"], archived_at: string | null = null) => ({
   id,
   name,
@@ -26,6 +37,7 @@ const habit = (id: number, name: string, kind: string, habit_targets: Targets, c
   archived_at,
   daily_counts,
   habit_targets,
+  stickers: fixtureStickers.filter((s) => s.habit_id === id),
 });
 
 const water = (todayCount: number) =>
