@@ -1,6 +1,18 @@
 @import "tailwindcss";
 
-/* Colours follow prefers-color-scheme through light-dark(). */
+/* dark: utilities follow data-theme like the colours do, and the device when nothing is picked. */
+@custom-variant dark {
+  &:where([data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-theme="light"] *)) {
+      @slot;
+    }
+  }
+}
+
+/* Colours follow color-scheme through light-dark(): the device's, or data-theme's on <html>. */
 @theme {
   --color-ground: light-dark(#f3f4f1, #0d0e0d);
   --color-ink: light-dark(#111311, #e9ebe7);
@@ -48,6 +60,14 @@
 @layer base {
   :root {
     color-scheme: light dark;
+  }
+  /* An inline color-scheme would change nothing: the build rewrites light-dark() into variables
+     that only a color-scheme declared in CSS switches. data-theme comes from the theme cookie. */
+  :root[data-theme="light"] {
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
   }
   body {
     background: var(--color-ground);
@@ -172,6 +192,56 @@
     font-size: var(--text-tiny);
     line-height: var(--text-tiny--line-height);
     font-weight: 500;
+  }
+
+  /* Native radios drawn as three words; the chosen one keeps a trace, as the current page does. */
+  .theme {
+    display: flex;
+    align-items: center;
+  }
+  .theme > span {
+    margin-right: 10px;
+  }
+  /* Each word is padded to a thumb's height. */
+  .theme label {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: 6px;
+    cursor: pointer;
+  }
+  .theme label:has(:checked) {
+    color: var(--color-ink);
+  }
+  .theme .trace {
+    display: inline-block;
+    padding-bottom: 6px;
+    margin-bottom: -6px;
+    background-position:
+      left bottom 0.15rem,
+      left bottom 0.15rem;
+  }
+  .theme label:has(:checked) .trace {
+    --rest: 100%;
+  }
+  .theme label:has(:focus-visible) .trace {
+    border-radius: 4px;
+    outline: 2px solid var(--color-ink);
+    outline-offset: 4px;
+    background-size:
+      100% 2px,
+      var(--rest) 1px;
+  }
+  @media (hover: hover) {
+    .theme label:hover {
+      color: var(--color-ink);
+    }
+    .theme label:hover .trace {
+      background-size:
+        100% 2px,
+        var(--rest) 1px;
+    }
   }
 
   .habit,
@@ -414,7 +484,7 @@
       grid-auto-flow: column;
       grid-auto-columns: minmax(0, 1fr);
     }
-    .colophon p + p {
+    .colophon > * + * {
       padding-left: var(--gutter);
     }
 
@@ -979,7 +1049,8 @@
   }
   /* The radios stay in the page for the keyboard and screen readers; the labels draw them. */
   .kinds input,
-  .swatch input {
+  .swatch input,
+  .theme input {
     position: absolute;
     opacity: 0;
     pointer-events: none;

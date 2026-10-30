@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { osloDay } from "@/lib/habits";
 import { createClient } from "@/lib/supabase/server";
+import { readTheme } from "@/lib/theme";
 import { addLog, removeLog } from "./actions";
 import { Dashboard, splitHabits } from "./dashboard";
 
@@ -27,5 +28,5 @@ export default async function Page() {
   // eslint-disable-next-line react-hooks/purity
   const today = osloDay(Date.now());
 
-  return <Dashboard today={today} {...splitHabits(habits, today)} loose={loose} add={addLog} remove={removeLog} />;
+  return <Dashboard today={today} {...splitHabits(habits, today)} loose={loose} add={addLog} remove={removeLog} theme={await readTheme()} />;
 }
