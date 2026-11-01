@@ -2,20 +2,21 @@
 
 import Link from "next/link";
 import { useRef, type CSSProperties } from "react";
-import { formatDay, habitStatus, todayStreak, type Kind } from "@/lib/habits";
+import { formatDay, habitStatus, todayStreak, weekStart, type Kind, type Period } from "@/lib/habits";
 import { curtainFrom, ease, gsap, useMotion } from "@/lib/motion";
 import { CoilButton } from "./coil-button";
-import { CellKey, toCells, type Day } from "./day-cells";
+import { CellKey, toCells, toWeeks, weekLabel, WeekKey, type Day } from "./day-cells";
 import { useTally, type Add, type Remove } from "./use-tally";
 
 export type HabitView = {
   id: number;
   name: string;
   kind: Kind;
-  target: number;
+  period: Period;
+  target: number; // count, target and before are the current period's: today, or this week
   color: string;
   count: number;
-  before: number; // the streak that ended yesterday
+  before: number; // the streak that ended with the period before
   first?: string;
   days: Day[];
 };
@@ -35,15 +36,17 @@ export function HabitRow({
   add: Add;
   remove: Remove;
 }) {
-  const { id, name, kind, target } = habit;
+  const { id, name, kind, period, target } = habit;
   const tally = useTally(habit, add, remove);
   const { count } = tally;
   const row = useRef<HTMLElement>(null);
 
-  const status = habitStatus(kind, count, target);
+  const status = habitStatus(kind, count, target, period);
   const first = habit.first ?? (count > 0 ? today : undefined);
   const streak = first ? todayStreak(kind, target, count, habit.before) : 0;
-  const cells = toCells(kind, habit.days, count, today, first);
+  const weeks = period === "week" ? toWeeks(kind, habit.days, count, today, first) : undefined;
+  const cells = weeks ? [] : toCells(kind, habit.days, count, today, first);
+  const thisWeek = weekStart(today);
 
   const shown = useRef(count);
   useMotion(
@@ -76,9 +79,9 @@ export function HabitRow({
         {!first
           ? "Nothing logged yet"
           : streak
-            ? `${streak}-day streak`
+            ? `${streak}-${period} streak`
             : habit.before
-              ? `Streak ended after ${habit.before} ${habit.before === 1 ? "day" : "days"}`
+              ? `Streak ended after ${habit.before} ${period}${habit.before === 1 ? "" : "s"}`
               : "No streak"}
       </p>
 
@@ -99,21 +102,38 @@ export function HabitRow({
               {d}
             </span>
           ))}
-          {cells.map(({ day, n, of, state, rings, quiet }) => (
-            <span
-              key={day}
-              className="cell"
-              data-state={state}
-              data-rings={rings}
-              // Ringed because an unfinished goal day isn't a miss yet.
-              data-today={day === today || undefined}
-              role={quiet ? undefined : "img"}
-              aria-label={quiet ? undefined : `${formatDay(day)}: ${n} of ${of}`}
-              aria-hidden={quiet || undefined}
-            />
-          ))}
+          {weeks
+            ? weeks.map((w) => (
+                <span
+                  key={w.start}
+                  className="week"
+                  data-state={w.quiet ? undefined : w.state}
+                  // Ringed because an unfinished week isn't a miss yet.
+                  data-today={w.start === thisWeek || undefined}
+                  role={w.quiet ? undefined : "img"}
+                  aria-label={w.quiet ? undefined : weekLabel(w)}
+                  aria-hidden={w.quiet || undefined}
+                >
+                  {w.days.map((d) => (
+                    <span key={d.day} className="cell" data-state={d.quiet ? "before" : undefined} data-tapped={(!d.quiet && d.n > 0) || undefined} />
+                  ))}
+                </span>
+              ))
+            : cells.map(({ day, n, of, state, rings, quiet }) => (
+                <span
+                  key={day}
+                  className="cell"
+                  data-state={state}
+                  data-rings={rings}
+                  // Ringed because an unfinished goal day isn't a miss yet.
+                  data-today={day === today || undefined}
+                  role={quiet ? undefined : "img"}
+                  aria-label={quiet ? undefined : `${formatDay(day)}: ${n} of ${of}`}
+                  aria-hidden={quiet || undefined}
+                />
+              ))}
         </div>
-        <CellKey kind={kind} cells={cells} />
+        {weeks ? <WeekKey kind={kind} weeks={weeks} /> : <CellKey kind={kind} cells={cells} />}
       </div>
 
       <CoilButton

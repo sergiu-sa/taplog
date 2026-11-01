@@ -18,7 +18,7 @@ export default async function Page() {
   const [{ data: habits }, { data: loose }] = await Promise.all([
     supabase
       .from("habits")
-      .select("id, name, kind, color, archived_at, daily_counts(day, count), habit_targets(from_day, target)")
+      .select("id, name, kind, period, color, archived_at, daily_counts(day, count), habit_targets(from_day, target)")
       .order("name")
       .throwOnError(),
     supabase.from("stickers").select("id, name:label").is("habit_id", null).order("id").throwOnError(),

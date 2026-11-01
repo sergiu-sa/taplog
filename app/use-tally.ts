@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
-import { habitStatus, osloTime, type Kind } from "@/lib/habits";
+import { habitStatus, osloTime, type Kind, type Period } from "@/lib/habits";
 import { gsap } from "@/lib/motion";
 import type { Logged, Removed } from "./actions";
 
@@ -10,11 +10,11 @@ export const UNDO_S = 6;
 export type Add = (habitId: number, at?: string) => Promise<Logged | null>;
 export type Remove = (id: number) => Promise<Removed | null>;
 
-type Habit = { id: number; name: string; kind: Kind; target: number; count: number };
+type Habit = { id: number; name: string; kind: Kind; period: Period; target: number; count: number };
 
-// Today's count for one habit. A hold adds one at once and the server confirms it; for a
+// The current period's count for one habit (today's, or this week's). A hold adds one at once and the server confirms it; for a
 // few seconds after, Undo takes that row back.
-export function useTally({ id, name, kind, target, count: saved }: Habit, add: Add, remove: Remove) {
+export function useTally({ id, name, kind, period, target, count: saved }: Habit, add: Add, remove: Remove) {
   const [count, change] = useOptimistic(saved, (c, n: number) => c + n);
   const [pending, startTransition] = useTransition();
   const [failed, setFailed] = useState(false);
@@ -48,7 +48,7 @@ export function useTally({ id, name, kind, target, count: saved }: Habit, add: A
     });
   }
 
-  const status = (n: number) => `${name}, ${n} of ${target}. ${habitStatus(kind, n, target).label}.`;
+  const status = (n: number) => `${name}, ${n} of ${target}. ${habitStatus(kind, n, target, period).label}.`;
 
   function fire() {
     run(1, status(count + 1), async () => {

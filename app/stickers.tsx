@@ -315,7 +315,7 @@ export function StickerPage({
                       <span className="pick__name">
                         <span className="trace">{h.name}</span>
                       </span>
-                      <span className="pick__kind">{targetText(h.kind, h.target)}</span>
+                      <span className="pick__kind">{targetText(h.kind, h.target, h.period)}</span>
                     </button>
                   </li>
                 ))}

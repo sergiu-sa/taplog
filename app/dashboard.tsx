@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { coil } from "@/lib/coil";
-import { addDays, formatDay, runBefore, targetOn, weekStart, type Kind } from "@/lib/habits";
+import { addDays, formatDay, periodCounts, periodOf, periodTarget, runBefore, targetOn, weekStart, type Kind, type Period } from "@/lib/habits";
 import type { Tables } from "@/lib/supabase/types";
 import type { Theme } from "@/lib/theme";
 import { HabitRow, type HabitView } from "./habit-row";
@@ -13,7 +13,7 @@ const WEEKS = 5;
 
 // The shape the dashboard query returns. Fixtures use it too, so the preview goes
 // through the same conversion as real data.
-export type HabitRecord = Pick<Tables<"habits">, "id" | "name" | "kind" | "color" | "archived_at"> & {
+export type HabitRecord = Pick<Tables<"habits">, "id" | "name" | "kind" | "period" | "color" | "archived_at"> & {
   daily_counts: Pick<Tables<"daily_counts">, "day" | "count">[];
   habit_targets: Pick<Tables<"habit_targets">, "from_day" | "target">[];
   stickers?: Pick<Tables<"stickers">, "id" | "label" | "last_tap_at">[];
@@ -26,18 +26,22 @@ export function countsOf(h: HabitRecord) {
   return { counts, first: [...counts.keys()].sort()[0] };
 }
 
+// Count, target and run are the current period's: today, or this week for a weekly habit.
 export function toHabitView(h: HabitRecord, today: string): HabitView {
   const kind = h.kind as Kind;
+  const period = h.period as Period;
   const { counts, first } = countsOf(h);
+  const now = periodOf(period, today);
   const monday = weekStart(today);
   return {
     id: h.id,
     name: h.name,
     kind,
-    target: targetOn(h.habit_targets, today),
+    period,
+    target: periodTarget(h.habit_targets, period, now),
     color: h.color,
-    count: counts.get(today) ?? 0,
-    before: runBefore(kind, h.habit_targets, counts, today, first),
+    count: periodCounts(counts, period).get(now) ?? 0,
+    before: runBefore({ kind, period, targets: h.habit_targets, counts }, today, first),
     first,
     days: Array.from({ length: WEEKS * 7 }, (_, i) => {
       const day = addDays(monday, i - 7 * (WEEKS - 1));
@@ -84,6 +88,7 @@ export function Dashboard({
   theme?: Theme;
 }) {
   const cols = sheetCols(habits.length);
+  const weekly = habits.some((h) => h.period === "week");
   return (
     <PageTurn>
       <div className="page">
@@ -142,11 +147,14 @@ export function Dashboard({
           {habits.length > 0 && (
             <>
               <p>Every sticker tap winds one more turn. Hold a coil to add one by hand.</p>
-              <p>The outlined day is today. Dots are days before tracking began or still to come.</p>
+              <p>
+                {weekly ? "The outlined day is today, the outlined week this week." : "The outlined day is today."} Dots are days before
+                tracking began or still to come.
+              </p>
             </>
           )}
           <div>
-            <p>Counts reset at midnight, Oslo time.</p>
+            <p>Counts reset at midnight, Oslo time.{weekly && " Weekly counts start again each Monday."}</p>
             <ThemeSwitch theme={theme} />
           </div>
         </footer>
