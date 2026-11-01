@@ -5,7 +5,7 @@ import { useRef, type CSSProperties } from "react";
 import { formatDay, habitStatus, todayStreak, weekStart, type Kind, type Period } from "@/lib/habits";
 import { curtainFrom, ease, gsap, useMotion } from "@/lib/motion";
 import { CoilButton } from "./coil-button";
-import { CellKey, toCells, toWeeks, weekLabel, type Day } from "./day-cells";
+import { CellKey, toCells, toWeeks, weekLabel, WeekKey, type Day } from "./day-cells";
 import { useTally, type Add, type Remove } from "./use-tally";
 
 export type HabitView = {
@@ -45,7 +45,8 @@ export function HabitRow({
   const first = habit.first ?? (count > 0 ? today : undefined);
   const streak = first ? todayStreak(kind, target, count, habit.before) : 0;
   const weeks = period === "week" ? toWeeks(kind, habit.days, count, today, first) : undefined;
-  const cells = weeks ? undefined : toCells(kind, habit.days, count, today, first);
+  const cells = weeks ? [] : toCells(kind, habit.days, count, today, first);
+  const thisWeek = weekStart(today);
 
   const shown = useRef(count);
   useMotion(
@@ -108,7 +109,7 @@ export function HabitRow({
                   className="week"
                   data-state={w.quiet ? undefined : w.state}
                   // Ringed because an unfinished week isn't a miss yet.
-                  data-today={w.start === weekStart(today) || undefined}
+                  data-today={w.start === thisWeek || undefined}
                   role={w.quiet ? undefined : "img"}
                   aria-label={w.quiet ? undefined : weekLabel(w)}
                   aria-hidden={w.quiet || undefined}
@@ -118,7 +119,7 @@ export function HabitRow({
                   ))}
                 </span>
               ))
-            : cells!.map(({ day, n, of, state, rings, quiet }) => (
+            : cells.map(({ day, n, of, state, rings, quiet }) => (
                 <span
                   key={day}
                   className="cell"
@@ -132,7 +133,7 @@ export function HabitRow({
                 />
               ))}
         </div>
-        <CellKey kind={kind} cells={cells} weeks={weeks} />
+        {weeks ? <WeekKey kind={kind} weeks={weeks} /> : <CellKey kind={kind} cells={cells} />}
       </div>
 
       <CoilButton

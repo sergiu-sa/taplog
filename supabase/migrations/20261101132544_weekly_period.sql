@@ -3,8 +3,7 @@
 alter table habits add column period text not null default 'day'
   constraint habits_period_check check (period in ('day', 'week'));
 
--- Kept under its old name: renaming would break the deployed code between this push and the
--- merge, and record_target() names the column in its body.
+-- Kept under its old name: record_target() names the column in its body, and saveHabit writes it.
 comment on column habits.daily_target is 'The target per period: a day or a week.';
 
 grant insert (period), update (period) on habits to authenticated;

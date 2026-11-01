@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useOptimistic, useRef, useState, useTransition, type CSSProperties } from "react";
-import { addDays, formatDay, habitStatus, osloTime, periodOf, targetText, todayStreak, weekStart, type DayState, type Kind } from "@/lib/habits";
+import { addDays, formatDay, habitStatus, osloTime, pastStatus, periodOf, targetText, todayStreak, weekStart, type DayState, type Kind } from "@/lib/habits";
 import { arrived, curtainFrom, ease, gsap, useMotion } from "@/lib/motion";
 import type { Made } from "./actions";
 import { Coil } from "./coil";
 import { CoilButton } from "./coil-button";
 import { PageTurn } from "./page-turn";
-import { CellKey, toCells, toWeeks, type Cell, type WeekCell } from "./day-cells";
+import { CellKey, toCells, toWeeks, WeekKey, type Cell, type WeekCell } from "./day-cells";
 import { WEEKS, type DetailView, type Tap } from "./detail-view";
 import { Stickers } from "./stickers";
 import { UNDO_S, useTally, type Add, type Remove } from "./use-tally";
@@ -47,7 +47,7 @@ export function HabitDetail({
   const current = first ? todayStreak(kind, target, count, view.before) : 0;
   // An archived habit's year stops on its archive day; the days after it are dots, untracked.
   const weeks = period === "week" ? toWeeks(kind, view.year, count, view.archived ?? today, first) : undefined;
-  const cells = weeks ? undefined : toCells(kind, view.year, count, view.archived ?? today, first);
+  const cells = weeks ? [] : toCells(kind, view.year, count, view.archived ?? today, first);
 
   // Arriving from the dashboard, the year draws in row by row and the hours rise. A page
   // load already painted them from the server, so it shows them as they are.
@@ -180,7 +180,7 @@ export function HabitDetail({
         </main>
 
         <footer className="colophon">
-          <p>Counts reset at midnight, Oslo time.</p>
+          <p>Counts reset at midnight, Oslo time.{period === "week" && " Weekly counts start again each Monday."}</p>
         </footer>
       </div>
     </PageTurn>
@@ -224,15 +224,15 @@ function Restore({ day, restore }: { day: string; restore: () => Promise<string 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 // A weekly habit's year draws each week as one strip, with a dot on each day that has a tap.
-function Year({ kind, cells, weeks: strips, today, day }: { kind: Kind; cells?: Cell[]; weeks?: WeekCell[]; today: string; day: string }) {
+function Year({ kind, cells, weeks: strips, today, day }: { kind: Kind; cells: Cell[]; weeks?: WeekCell[]; today: string; day: string }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [picked, pick] = useOptimistic(day);
 
-  const summary = strips ? weekSummary(kind, strips) : daySummary(kind, cells!);
+  const summary = strips ? weekSummary(kind, strips) : daySummary(kind, cells);
   const weeks: { day: string; n: number; state?: DayState; rings?: number }[][] = strips
     ? strips.map((w) => w.days.map((d) => ({ ...d, state: d.quiet ? (d.day > today ? "future" : "before") : undefined })))
-    : Array.from({ length: cells!.length / 7 }, (_, w) => cells!.slice(w * 7, w * 7 + 7));
+    : Array.from({ length: cells.length / 7 }, (_, w) => cells.slice(w * 7, w * 7 + 7));
   const now = weekStart(today);
 
   return (
@@ -285,7 +285,7 @@ function Year({ kind, cells, weeks: strips, today, day }: { kind: Kind; cells?: 
           })}
         </div>
       </div>
-      <CellKey kind={kind} cells={cells} weeks={strips} />
+      {strips ? <WeekKey kind={kind} weeks={strips} /> : <CellKey kind={kind} cells={cells} />}
     </section>
   );
 }
@@ -304,11 +304,8 @@ function weekSummary(kind: Kind, weeks: WeekCell[]) {
     : `Last 12 months: ${tracked.length} weeks tracked, ${tracked.filter((w) => w.state === "over").length} over your limit.`;
 }
 
-// A past day or week: a goal's is over, so it's short rather than still to go.
 function dayStatus(kind: Kind, n: number, target: number, past: boolean) {
-  if (!past) return habitStatus(kind, n, target).label;
-  if (kind === "goal") return n >= target ? "Goal reached" : `${target - n} short`;
-  return n <= target ? "Within your limit" : `${n - target} over your limit`;
+  return past ? pastStatus(kind, n, target) : habitStatus(kind, n, target).label;
 }
 
 type Row = Tap & { gone?: boolean };
@@ -333,6 +330,8 @@ function DaySection({
   const { id: habitId, kind, period, day, dayTarget } = view;
   const isToday = day === today;
   const at = (d: string) => periodOf(period, d);
+  // The coil counts the current period (or the archive day's), so a change on any day of it moves the coil.
+  const inCoil = at(day) === at(view.archived ?? today);
   const [taps, update] = useOptimistic(view.taps, (rows, a: { drop: number } | { put: Tap }) =>
     "drop" in a ? rows.filter((r) => r.id !== a.drop) : [...rows, a.put],
   );
@@ -357,7 +356,7 @@ function DaySection({
     setSaid(`Removed the ${tap.time} tap.`);
     startTransition(async () => {
       update({ drop: tap.id });
-      if (isToday) change(-1);
+      if (inCoil) change(-1);
       try {
         // Nothing deleted means it was already gone; Undo would add a tap that never existed.
         if (await remove(tap.id)) setRemoved(tap);
@@ -377,7 +376,7 @@ function DaySection({
     startTransition(async () => {
       // A session can only add taps by hand, so that's what comes back.
       update({ put: { ...tap, label: null } });
-      if (isToday) change(1);
+      if (inCoil) change(1);
       try {
         if (!(await add(habitId, tap.createdAt))) failed();
       } catch {
@@ -398,7 +397,7 @@ function DaySection({
     setSaid(`Added one at ${time}.`);
     // A negative id until the server answers: unique as a key, and its Remove stays disabled.
     update({ put: { id: -Date.now(), createdAt: `${day}T${time}`, time, label: null } });
-    if (isToday) change(1);
+    if (inCoil) change(1);
     try {
       if (!(await add(habitId, `${day}T${time}`))) failed();
     } catch {
@@ -409,7 +408,7 @@ function DaySection({
   // Today follows the coil, holds included; another day follows its own list. The coil counts
   // the current period, so today's own taps are what it moved since the server's count.
   const count = isToday ? view.dayCount + todayCount - view.count : view.dayCount + taps.length - view.taps.length;
-  const periodCount = view.dayPeriodCount + count - view.dayCount;
+  const periodCount = inCoil ? todayCount : view.dayPeriodCount + count - view.dayCount;
   const rows: Row[] = [...taps, ...(removed ? [{ ...removed, gone: true }] : [])].toSorted((a, b) => (a.time < b.time ? -1 : a.time > b.time ? 1 : 0));
   const yesterday = addDays(today, -1);
   const title = isToday ? "Today" : day === yesterday ? "Yesterday" : formatDay(day);

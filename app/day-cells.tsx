@@ -78,16 +78,24 @@ const WEEK_KEY: Record<Kind, Key[]> = {
   ],
 };
 
-// Names only the states these cells or weeks show.
-export function CellKey({ kind, cells, weeks }: { kind: Kind; cells?: Cell[]; weeks?: WeekCell[] }) {
-  const seen = new Set(weeks ? weeks.filter((w) => !w.quiet).map((w) => w.state) : cells!.map((c) => (c.rings ? "rings" : c.state)));
-  const key = weeks ? WEEK_KEY[kind].filter((k) => seen.has(k.state)) : (kind === "goal" ? GOAL_KEY : LIMIT_KEY).filter((k) => seen.has(k.rings ? "rings" : k.state));
-  if (key.length === 0) return null;
+// Each key names only the states its cells or weeks show.
+export function CellKey({ kind, cells }: { kind: Kind; cells: Cell[] }) {
+  const seen = new Set(cells.map((c) => (c.rings ? "rings" : c.state)));
+  return <KeyList shape="cell" items={(kind === "goal" ? GOAL_KEY : LIMIT_KEY).filter((k) => seen.has(k.rings ? "rings" : k.state))} />;
+}
+
+export function WeekKey({ kind, weeks }: { kind: Kind; weeks: WeekCell[] }) {
+  const seen = new Set(weeks.filter((w) => !w.quiet).map((w) => w.state));
+  return <KeyList shape="week" items={WEEK_KEY[kind].filter((k) => seen.has(k.state))} />;
+}
+
+function KeyList({ shape, items }: { shape: "cell" | "week"; items: Key[] }) {
+  if (items.length === 0) return null;
   return (
     <ul className="days__key" aria-hidden>
-      {key.map(({ label, state, rings }) => (
+      {items.map(({ label, state, rings }) => (
         <li key={label}>
-          <span className={weeks ? "week" : "cell"} data-state={state} data-rings={rings} />
+          <span className={shape} data-state={state} data-rings={rings} />
           {label}
         </li>
       ))}

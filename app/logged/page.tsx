@@ -1,6 +1,6 @@
 import { refresh } from "next/cache";
 import { notFound } from "next/navigation";
-import { formatDay, formatGap, habitStatus, osloDay, periodEnd, periodOf, periodTarget, toneClass, type Kind, type Period } from "@/lib/habits";
+import { formatDay, formatGap, habitStatus, osloDay, pastStatus, periodEnd, periodOf, periodTarget, toneClass, type Kind, type Period } from "@/lib/habits";
 import { verifyId } from "@/lib/sig";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { UndoButton } from "./undo-button";
@@ -54,7 +54,6 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
   const habit = log.habits;
   const kind = habit.kind as Kind;
   const period = habit.period as Period;
-  // The period the log falls in: its Oslo day, or the Monday of that week.
   const start = periodOf(period, osloDay(log.created_at));
 
   const [{ data: counted }, { data: prev }] = await Promise.all([
@@ -105,7 +104,7 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
         {count}
         <span className="text-4xl font-semibold text-neutral-400"> / {target}</span>
       </p>
-      <p className={`mt-1 text-lg font-medium ${toneClass[status.tone]}`}>{status.label}</p>
+      <p className={`mt-1 text-lg font-medium ${toneClass[status.tone]}`}>{current ? status.label : pastStatus(kind, count, target)}</p>
 
       {kind === "limit" && (
         <p className="mt-6 text-neutral-500">

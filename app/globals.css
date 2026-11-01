@@ -470,6 +470,12 @@
     height: 8px;
     border-radius: 2px;
   }
+  /* In the grid only its dots tell a part week from an empty one, so the key draws two. */
+  .days__key .week[data-state="partial"] {
+    background:
+      radial-gradient(circle at 30% 50%, var(--trace) 1.5px, transparent 2px),
+      radial-gradient(circle at 70% 50%, var(--trace) 1.5px, transparent 2px);
+  }
 
   .habit__coil {
     grid-area: coil;

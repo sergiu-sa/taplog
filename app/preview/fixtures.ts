@@ -1,4 +1,4 @@
-import { addDays } from "@/lib/habits";
+import { addDays, weekStart } from "@/lib/habits";
 import type { HabitRecord } from "../dashboard";
 
 // Made-up counts for screenshots. A Thursday, so the last grid row has past and future days.
@@ -49,11 +49,11 @@ const water = (todayCount: number) =>
 // Lowered from 15 to 10 two weeks ago: days before it are scored on 15.
 const smokesTargets: Targets = [{ from_day: "2026-09-10", target: 15 }, { from_day: "2026-10-08", target: 10 }];
 
-const weekday = (day: string) => new Date(`${day}T12:00:00Z`).getUTCDay();
+const monWedFri = (day: string) => [0, 2, 4].some((n) => addDays(weekStart(day), n) === day);
 // Mon, Wed, Fri from a Saturday (a short first week); raised to 3 on Wednesday 30 September, so
 // that whole week scores on 3; the week of 5 October lost its Friday.
 const gym = habit(9, "Gym", "goal", [{ from_day: "2026-09-12", target: 2 }, { from_day: "2026-09-30", target: 3 }], "#8B5CF6",
-  series("2026-09-12", (_, d) => (d === "2026-09-12" || ([1, 3, 5].includes(weekday(d)) && d !== "2026-10-09" && d < today) ? 1 : 0)),
+  series("2026-09-12", (_, d) => (d === "2026-09-12" || (monWedFri(d) && d !== "2026-10-09" && d < today) ? 1 : 0)),
   null, "week");
 // At the limit, within, over, a week with none, within, and one so far this week.
 const takeaways = ["2026-09-15", "2026-09-19", "2026-09-25", "2026-10-01", "2026-10-02", "2026-10-03", "2026-10-16", "2026-10-20"];

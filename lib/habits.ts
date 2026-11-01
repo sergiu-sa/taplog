@@ -37,6 +37,12 @@ function status(kind: Kind, count: number, target: number): { tone: Tone; label:
   return { tone: "over", label: `${count - target} over your limit` };
 }
 
+// A finished day or week: a goal's is over, so it's short rather than still to go.
+export function pastStatus(kind: Kind, count: number, target: number) {
+  if (kind === "goal") return count >= target ? "Goal reached" : `${target - count} short`;
+  return count <= target ? "Within your limit" : `${count - target} over your limit`;
+}
+
 // A row of habit_targets: the target from that Oslo day until the next row.
 export type Target = { from_day: string; target: number };
 

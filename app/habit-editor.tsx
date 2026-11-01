@@ -150,6 +150,8 @@ export function HabitEditor({
                   at most
                 </span>
                 <span className="stepper__n">{target}</span>
+                {/* The period words sit under the stepper; a step still announces the whole phrase. */}
+                <span className="sr-only"> a {period}</span>
               </output>
               <button type="button" aria-label="One more" aria-disabled={target >= MAX_TARGET || undefined} onClick={() => setTarget((t) => Math.min(MAX_TARGET, t + 1))}>
                 +
@@ -185,7 +187,7 @@ export function HabitEditor({
 
           {habit && target !== habit.target && (
             <p className="editor__note">
-              {period === "week" ? "From this week. Earlier weeks" : "From today. Earlier days"} keep {habit.target}.
+              {period === "week" ? "From this week. Earlier weeks" : "From today. Earlier days"} keep {habit.kept}.
             </p>
           )}
           {state?.error && (
