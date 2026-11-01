@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
-import { formatDay, MAX_TARGET, minTarget, type Kind } from "@/lib/habits";
+import { formatDay, MAX_TARGET, minTarget, type Kind, type Period } from "@/lib/habits";
 import { ease, gsap, useMotion } from "@/lib/motion";
 import { PALETTE } from "@/lib/palette";
 import type { Saved } from "./actions";
@@ -31,6 +31,7 @@ export function HabitEditor({
   // Controlled: React resets a form's uncontrolled fields after every action, failed ones too.
   const [title, setTitle] = useState(habit?.name ?? "");
   const [kind, setKind] = useState<Kind>(habit?.kind ?? "goal");
+  const [period, setPeriod] = useState<Period>(habit?.period ?? "day");
   const [target, setTarget] = useState(habit?.target ?? 1);
   const [color, setColor] = useState(habit?.color ?? firstColor);
   const [state, formAction, saving] = useActionState(save, null);
@@ -118,6 +119,7 @@ export function HabitEditor({
                   <small>Locked after the first tap</small>
                 </p>
                 <input type="hidden" name="kind" value={kind} />
+                <input type="hidden" name="period" value={period} />
               </div>
             ) : (
               <fieldset className="field">
@@ -148,14 +150,25 @@ export function HabitEditor({
                   at most
                 </span>
                 <span className="stepper__n">{target}</span>
-                {/* Its own line: phase 8 turns it into a day or week switch. */}
-                <span className="stepper__per">a day</span>
               </output>
               <button type="button" aria-label="One more" aria-disabled={target >= MAX_TARGET || undefined} onClick={() => setTarget((t) => Math.min(MAX_TARGET, t + 1))}>
                 +
               </button>
               <input type="hidden" name="target" value={target} />
             </div>
+            {/* The period finishes the stepper's phrase: "at most 15 a day". It locks with the kind. */}
+            {locked ? (
+              <p className="stepper__per">a {period}</p>
+            ) : (
+              <div className="words editor__period" role="radiogroup" aria-label="Period">
+                {(["day", "week"] as const).map((p) => (
+                  <label key={p}>
+                    <input type="radio" name="period" value={p} checked={period === p} onChange={() => setPeriod(p)} />
+                    <span className="trace">a {p}</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
 
           <fieldset className="field editor__colours">
@@ -170,7 +183,11 @@ export function HabitEditor({
             </div>
           </fieldset>
 
-          {habit && target !== habit.target && <p className="editor__note">From today. Earlier days keep {habit.target}.</p>}
+          {habit && target !== habit.target && (
+            <p className="editor__note">
+              {period === "week" ? "From this week. Earlier weeks" : "From today. Earlier days"} keep {habit.target}.
+            </p>
+          )}
           {state?.error && (
             <p className="editor__error" role="alert">
               {state.error}

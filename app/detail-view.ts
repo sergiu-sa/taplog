@@ -1,4 +1,4 @@
-import { addDays, bestStreak, formatDay, osloDay, osloHour, osloTime, perDay, runBefore, targetOn, weekStart, type Kind } from "@/lib/habits";
+import { addDays, bestStreak, formatDay, osloDay, osloHour, osloTime, periodCounts, periodOf, periodTarget, perPeriod, runBefore, targetOn, weekStart, type Kind, type Period } from "@/lib/habits";
 import { countsOf, type HabitRecord } from "./dashboard";
 import type { Day } from "./day-cells";
 
@@ -23,18 +23,20 @@ export type DetailView = {
   id: number;
   name: string;
   kind: Kind;
+  period: Period;
   color: string;
   archived: string | null; // the Oslo day it was archived on
-  target: number;
+  target: number; // target, count, before, best and perPeriod are by period: a day or a week
   count: number;
   before: number;
   first?: string;
   best: number;
-  perDay: number;
+  perPeriod: number;
   year: Day[];
   day: string;
-  dayTarget: number;
-  dayCount: number;
+  dayTarget: number; // the target of the period holding `day`
+  dayCount: number; // that day's own taps
+  dayPeriodCount: number; // and its period's
   taps: Tap[];
   hours: number[];
   stickers: StickerRow[];
@@ -48,7 +50,11 @@ export function pickDay(asked: string | string[] | undefined, today: string) {
 // `taps` are the selected day's; `recent` the last 30 days' tap times, for the hours strip.
 export function toDetailView(h: HabitRecord, today: string, day: string, taps: TapRecord[], recent: string[]): DetailView {
   const kind = h.kind as Kind;
+  const period = h.period as Period;
   const { counts, first } = countsOf(h);
+  const sums = periodCounts(counts, period);
+  const scored = { kind, period, targets: h.habit_targets, counts };
+  const at = (day: string) => periodOf(period, day);
   const archived = h.archived_at && osloDay(h.archived_at);
   // An archived habit's figures stand as they were on its archive day: nothing after was tracked.
   const end = archived && archived < today ? archived : today;
@@ -59,21 +65,23 @@ export function toDetailView(h: HabitRecord, today: string, day: string, taps: T
     id: h.id,
     name: h.name,
     kind,
+    period,
     color: h.color,
     archived,
-    target: targetOn(h.habit_targets, end),
-    count: counts.get(end) ?? 0,
-    before: runBefore(kind, h.habit_targets, counts, end, first),
+    target: periodTarget(h.habit_targets, period, at(end)),
+    count: sums.get(at(end)) ?? 0,
+    before: runBefore(scored, end, first),
     first,
-    best: bestStreak(kind, h.habit_targets, counts, end, first),
-    perDay: perDay(counts, end, first),
+    best: bestStreak(scored, end, first),
+    perPeriod: perPeriod(counts, period, end, first),
     year: Array.from({ length: WEEKS * 7 }, (_, i) => {
       const d = addDays(start, i);
       return { day: d, count: counts.get(d) ?? 0, target: targetOn(h.habit_targets, d) };
     }),
     day,
-    dayTarget: targetOn(h.habit_targets, day),
+    dayTarget: periodTarget(h.habit_targets, period, at(day)),
     dayCount: counts.get(day) ?? 0,
+    dayPeriodCount: sums.get(at(day)) ?? 0,
     taps: taps.map((t) => ({
       id: t.id,
       createdAt: t.created_at,
@@ -90,6 +98,7 @@ export type EditorView = {
   id: number;
   name: string;
   kind: Kind;
+  period: Period;
   target: number;
   color: string;
   archived: boolean;
@@ -102,6 +111,7 @@ export function toEditorView(h: HabitRecord, today: string): EditorView {
     id: h.id,
     name: h.name,
     kind: h.kind as Kind,
+    period: h.period as Period,
     target: targetOn(h.habit_targets, today),
     color: h.color,
     archived: h.archived_at !== null,
@@ -110,7 +120,7 @@ export function toEditorView(h: HabitRecord, today: string): EditorView {
   };
 }
 
-export type HabitChoice = { id: number; name: string; kind: Kind; target: number; color: string };
+export type HabitChoice = { id: number; name: string; kind: Kind; period: Period; target: number; color: string };
 
 export type StickerView = {
   id: number;
@@ -122,11 +132,11 @@ export type StickerView = {
 };
 
 type StickerSource = { id: number; label: string; last_tap_at: string | null; habit_id: number | null; taps: number };
-type PickSource = Pick<HabitRecord, "id" | "name" | "kind" | "color" | "archived_at" | "habit_targets">;
+type PickSource = Pick<HabitRecord, "id" | "name" | "kind" | "period" | "color" | "archived_at" | "habit_targets">;
 
 // `habits` are all the owner's, archived too: the sticker's own habit may be one of them.
 export function toStickerView(s: StickerSource, habits: PickSource[], today: string): StickerView {
-  const pick = (h: PickSource): HabitChoice => ({ id: h.id, name: h.name, kind: h.kind as Kind, target: targetOn(h.habit_targets, today), color: h.color });
+  const pick = (h: PickSource): HabitChoice => ({ id: h.id, name: h.name, kind: h.kind as Kind, period: h.period as Period, target: targetOn(h.habit_targets, today), color: h.color });
   const own = habits.find((h) => h.id === s.habit_id);
   return {
     id: s.id,

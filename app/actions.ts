@@ -56,28 +56,31 @@ export async function removeLog(id: number): Promise<Removed | null> {
   return data && { habitId: data.habit_id, createdAt: data.created_at };
 }
 
-// A new habit when id is null. The database checks the same rules and locks the kind once
+// A new habit when id is null. The database checks the same rules and locks kind and period once
 // the habit has a tap; these checks only turn a refusal into a sentence.
 export async function saveHabit(id: number | null, _prev: Saved, form: FormData): Promise<Saved> {
   const supabase = await signedIn();
   if (id !== null && !Number.isSafeInteger(id)) return { error: "That habit is gone." };
   const name = cleanName(form.get("name"));
   const kind = form.get("kind");
+  const period = form.get("period");
   const target = Number(form.get("target"));
   const color = form.get("color");
   if (!name) return { error: "A name needs 1 to 40 characters." };
   if (kind !== "goal" && kind !== "limit") return { error: "Pick goal or limit." };
+  if (period !== "day" && period !== "week") return { error: "Pick a day or a week." };
   if (!Number.isInteger(target) || target < minTarget(kind) || target > MAX_TARGET) {
     return { error: `The target runs from ${minTarget(kind)} to ${MAX_TARGET}.` };
   }
   if (!PALETTE.some((c) => c.hex === color)) return { error: "Pick a colour." };
-  const fields = { name, kind, daily_target: target, color: color as string };
+  // daily_target holds the target per period, a week's too.
+  const fields = { name, kind, period, daily_target: target, color: color as string };
 
   const { data, error } =
     id === null
       ? await supabase.from("habits").insert(fields).select("id").single()
       : await supabase.from("habits").update(fields).eq("id", id).select("id").maybeSingle();
-  if (error?.message.includes("kind is locked")) return { error: "The kind is locked after the first tap." };
+  if (error?.message.includes("kind and period are locked")) return { error: "The kind and period are locked after the first tap." };
   if (error) return { error: "Didn't save. Try again." };
   if (!data) return { error: "That habit is gone." };
   landOn(`/h/${data.id}`);

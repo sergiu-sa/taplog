@@ -29,10 +29,11 @@ export const fixtureStickers = [
   { id: 16, habit_id: 3, label: "Gym bag", last_tap_at: "2026-10-21T16:30:00Z", taps: 23 },
 ];
 
-const habit = (id: number, name: string, kind: string, habit_targets: Targets, color: string, daily_counts: HabitRecord["daily_counts"], archived_at: string | null = null) => ({
+const habit = (id: number, name: string, kind: string, habit_targets: Targets, color: string, daily_counts: HabitRecord["daily_counts"], archived_at: string | null = null, period = "day") => ({
   id,
   name,
   kind,
+  period,
   color,
   archived_at,
   daily_counts,
@@ -48,6 +49,16 @@ const water = (todayCount: number) =>
 // Lowered from 15 to 10 two weeks ago: days before it are scored on 15.
 const smokesTargets: Targets = [{ from_day: "2026-09-10", target: 15 }, { from_day: "2026-10-08", target: 10 }];
 
+const weekday = (day: string) => new Date(`${day}T12:00:00Z`).getUTCDay();
+// Mon, Wed, Fri from a Saturday (a short first week); raised to 3 on Wednesday 30 September, so
+// that whole week scores on 3; the week of 5 October lost its Friday.
+const gym = habit(9, "Gym", "goal", [{ from_day: "2026-09-12", target: 2 }, { from_day: "2026-09-30", target: 3 }], "#8B5CF6",
+  series("2026-09-12", (_, d) => (d === "2026-09-12" || ([1, 3, 5].includes(weekday(d)) && d !== "2026-10-09" && d < today) ? 1 : 0)),
+  null, "week");
+// At the limit, within, over, a week with none, within, and one so far this week.
+const takeaways = ["2026-09-15", "2026-09-19", "2026-09-25", "2026-10-01", "2026-10-02", "2026-10-03", "2026-10-16", "2026-10-20"];
+const takeaway = habit(10, "Takeaway", "limit", always(2), "#F59E0B", series("2026-09-15", (_, d) => (takeaways.includes(d) ? 1 : 0)), null, "week");
+
 export const fixtures: Record<string, HabitRecord[]> = {
   // A goal met, a running streak with today unfinished, a limit over target.
   dashboard: [
@@ -61,6 +72,8 @@ export const fixtures: Record<string, HabitRecord[]> = {
     habit(2, "Smokes", "limit", smokesTargets, "#F97316", series("2026-09-10", (i, d) => (d === today ? 10 : 5 + wave(i, 3)))),
     water(0),
   ],
+  // A weekly goal and a weekly limit beside a daily goal.
+  weekly: [gym, takeaway, water(5)],
   // A first visit: nothing made yet.
   empty: [],
   // Past four on the sheet (4 + 3 on desktop), a name that wraps, and an archived habit.

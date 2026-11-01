@@ -16,10 +16,10 @@ insert into stickers (id, user_id, habit_id, label, token_hash) overriding syste
 insert into logs (habit_id, user_id, source) values (9001, '00000000-0000-0000-0000-00000000000a', 'manual');
 
 select ok(
-  not (has_function_privilege('anon', 'lock_kind()', 'execute')
-       or has_function_privilege('authenticated', 'lock_kind()', 'execute')
-       or has_function_privilege('service_role', 'lock_kind()', 'execute')),
-  'no API role may call lock_kind()'
+  not (has_function_privilege('anon', 'lock_scoring()', 'execute')
+       or has_function_privilege('authenticated', 'lock_scoring()', 'execute')
+       or has_function_privilege('service_role', 'lock_scoring()', 'execute')),
+  'no API role may call lock_scoring()'
 );
 
 -- Signed in as A

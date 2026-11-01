@@ -1,6 +1,6 @@
 import { refresh } from "next/cache";
 import { notFound } from "next/navigation";
-import { formatGap, habitStatus, osloDay, targetOn, toneClass, type Kind } from "@/lib/habits";
+import { formatDay, formatGap, habitStatus, osloDay, periodEnd, periodOf, periodTarget, toneClass, type Kind, type Period } from "@/lib/habits";
 import { verifyId } from "@/lib/sig";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { UndoButton } from "./undo-button";
@@ -35,7 +35,7 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
 
   const { data: log } = await supabaseAdmin
     .from("logs")
-    .select("created_at, habit_id, habits(name, kind, color, habit_targets(from_day, target))")
+    .select("created_at, habit_id, habits(name, kind, period, color, habit_targets(from_day, target))")
     .eq("id", Number(id))
     .maybeSingle()
     .throwOnError();
@@ -53,15 +53,17 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
 
   const habit = log.habits;
   const kind = habit.kind as Kind;
-  const day = osloDay(log.created_at);
+  const period = habit.period as Period;
+  // The period the log falls in: its Oslo day, or the Monday of that week.
+  const start = periodOf(period, osloDay(log.created_at));
 
   const [{ data: counted }, { data: prev }] = await Promise.all([
     supabaseAdmin
       .from("daily_counts")
       .select("count")
       .eq("habit_id", log.habit_id)
-      .eq("day", day)
-      .maybeSingle()
+      .gte("day", start)
+      .lte("day", periodEnd(period, start))
       .throwOnError(),
     kind === "limit"
       ? supabaseAdmin
@@ -76,14 +78,15 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
       : { data: null },
   ]);
 
-  const count = counted?.count ?? 0;
+  const count = counted.reduce((n, r) => n + r.count!, 0);
   // The link stays valid, so the page can be reopened after the target changed.
-  const target = targetOn(habit.habit_targets, day);
+  const target = periodTarget(habit.habit_targets, period, start);
   const status = habitStatus(kind, count, target);
   const created = new Date(log.created_at).getTime();
   // Server Components render once per request, so this is just the request time.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
+  const current = start === periodOf(period, osloDay(now));
 
   return (
     <main id="main" className="mx-auto flex min-h-dvh max-w-sm flex-col px-6 pt-16 pb-8">
@@ -96,7 +99,7 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
       </h1>
 
       <p className="mt-12 text-sm text-neutral-500">
-        {day === osloDay(now) ? "Today" : day}
+        {period === "week" ? (current ? "This week" : `Week of ${formatDay(start, "date")}`) : current ? "Today" : start}
       </p>
       <p className={`text-7xl font-bold tabular-nums ${toneClass[status.tone]}`}>
         {count}

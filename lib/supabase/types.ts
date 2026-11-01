@@ -52,6 +52,7 @@ export type Database = {
           id: number
           kind: string
           name: string
+          period: string
           user_id: string
         }
         Insert: {
@@ -62,6 +63,7 @@ export type Database = {
           id?: never
           kind: string
           name: string
+          period?: string
           user_id?: string
         }
         Update: {
@@ -72,6 +74,7 @@ export type Database = {
           id?: never
           kind?: string
           name?: string
+          period?: string
           user_id?: string
         }
         Relationships: []

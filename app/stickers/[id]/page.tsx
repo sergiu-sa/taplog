@@ -34,7 +34,7 @@ export default async function Sticker({ params }: PageProps<"/stickers/[id]">) {
   if (!Number.isSafeInteger(id)) notFound();
   const [sticker, { data: habits }, { count }] = await Promise.all([
     loadSticker(id),
-    supabase.from("habits").select("id, name, kind, color, archived_at, habit_targets(from_day, target)").order("name").throwOnError(),
+    supabase.from("habits").select("id, name, kind, period, color, archived_at, habit_targets(from_day, target)").order("name").throwOnError(),
     supabase.from("logs").select("*", { count: "exact", head: true }).eq("sticker_id", id).throwOnError(),
   ]);
   if (!sticker) notFound();

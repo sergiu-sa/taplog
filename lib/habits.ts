@@ -1,4 +1,5 @@
 export type Kind = "goal" | "limit";
+export type Period = "day" | "week";
 export type Tone = "progress" | "done" | "warn" | "over";
 
 export const toneClass: Record<Tone, string> = {
@@ -12,14 +13,20 @@ export const toneClass: Record<Tone, string> = {
 // habits_daily_target_check in the database holds the same range.
 export const MAX_TARGET = 20;
 export const minTarget = (kind: Kind) => (kind === "goal" ? 1 : 0);
-export const targetText = (kind: Kind, target: number) => (kind === "goal" ? `${target} a day` : `at most ${target} a day`);
+export const targetText = (kind: Kind, target: number, period: Period) => (kind === "goal" ? `${target} a ${period}` : `at most ${target} a ${period}`);
 
 // A goal is met at count >= target; a limit holds while count <= target.
 export function onTrack(kind: Kind, count: number, target: number) {
   return kind === "goal" ? count >= target : count <= target;
 }
 
-export function habitStatus(kind: Kind, count: number, target: number): { tone: Tone; label: string } {
+// Today's page says "today" already; a week's count needs saying.
+export function habitStatus(kind: Kind, count: number, target: number, period: Period = "day"): { tone: Tone; label: string } {
+  const s = status(kind, count, target);
+  return period === "week" ? { ...s, label: `${s.label} this week` } : s;
+}
+
+function status(kind: Kind, count: number, target: number): { tone: Tone; label: string } {
   if (kind === "goal") {
     return count >= target
       ? { tone: "done", label: "Goal reached" }
@@ -44,6 +51,7 @@ export type DayState = "future" | "before" | "met" | "partial" | "missed" | "ove
 
 // `target` is the one in force on `day` (targetOn), so a later change doesn't re-score it.
 // `first` is the first logged day: days before it weren't tracked, so they're not misses.
+// A week scores the same way, each day here being a week's Monday (periodOf).
 export function dayState(kind: Kind, target: number, count: number, day: string, today: string, first?: string): DayState {
   if (day > today) return "future";
   if (!first || day < first) return "before";
@@ -74,6 +82,7 @@ export function osloHour(date: Date | string | number) {
 const dayFormats = {
   short: new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }),
   long: new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }),
+  date: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }),
 };
 
 export function formatDay(day: string, style: keyof typeof dayFormats = "short") {
@@ -92,46 +101,77 @@ export function weekStart(day: string) {
   return addDays(day, -((new Date(`${day}T00:00:00Z`).getUTCDay() + 6) % 7));
 }
 
-// Consecutive on-track days ending yesterday, back to `first` (the first logged day).
-// A day with no logs counts as 0, which fails a goal and passes a limit, so `first`
+// A period is named by its first day: the day itself, or the Monday of its Oslo week.
+export const periodOf = (period: Period, day: string) => (period === "week" ? weekStart(day) : day);
+const length = (period: Period) => (period === "week" ? 7 : 1);
+export const periodEnd = (period: Period, start: string) => addDays(start, length(period) - 1);
+
+// A week takes the target in force on its Sunday, so a change midweek counts for that whole
+// week and earlier weeks keep theirs. The current week's Sunday is ahead: the latest row.
+export const periodTarget = (targets: Target[], period: Period, start: string) => targetOn(targets, periodEnd(period, start));
+
+// Taps per period, keyed by its first day. Days come from daily_counts, already Oslo's.
+export function periodCounts(counts: Map<string, number>, period: Period) {
+  if (period === "day") return counts;
+  const weeks = new Map<string, number>();
+  for (const [day, n] of counts) weeks.set(weekStart(day), (weeks.get(weekStart(day)) ?? 0) + n);
+  return weeks;
+}
+
+// Every function below steps through periods: `today` stands for the period holding it, and
+// `first` (the first logged day) for the period holding that.
+export type Scored = { kind: Kind; period: Period; targets: Target[]; counts: Map<string, number> };
+
+// Consecutive on-track periods ending with the one before today's, back to the first logged
+// one. A period with no logs counts as 0, which fails a goal and passes a limit, so `first`
 // stops a limit streak from reaching back before tracking began.
-export function runBefore(kind: Kind, targets: Target[], counts: Map<string, number>, today: string, first: string | undefined) {
+export function runBefore({ kind, period, targets, counts }: Scored, today: string, first: string | undefined) {
   let n = 0;
   if (!first) return n;
-  for (let day = addDays(today, -1); day >= first && onTrack(kind, counts.get(day) ?? 0, targetOn(targets, day)); day = addDays(day, -1)) n++;
+  const sums = periodCounts(counts, period);
+  const step = length(period);
+  const start = periodOf(period, first);
+  for (let p = addDays(periodOf(period, today), -step); p >= start && onTrack(kind, sums.get(p) ?? 0, periodTarget(targets, period, p)); p = addDays(p, -step)) n++;
   return n;
 }
 
-export function streak(kind: Kind, targets: Target[], counts: Map<string, number>, today: string, first: string | undefined) {
-  return first ? todayStreak(kind, targetOn(targets, today), counts.get(today) ?? 0, runBefore(kind, targets, counts, today, first)) : 0;
+export function streak(h: Scored, today: string, first: string | undefined) {
+  const now = periodOf(h.period, today);
+  return first ? todayStreak(h.kind, periodTarget(h.targets, h.period, now), periodCounts(h.counts, h.period).get(now) ?? 0, runBefore(h, today, first)) : 0;
 }
 
-// The longest run, every day scored on its own target. Today joins a run the way it does
-// in streak(): when on track, and an unfinished goal day doesn't end one.
-export function bestStreak(kind: Kind, targets: Target[], counts: Map<string, number>, today: string, first: string | undefined) {
+// The longest run, every period scored on its own target. The current one joins a run the
+// way it does in streak(): when on track, and an unfinished goal doesn't end one.
+export function bestStreak({ kind, period, targets, counts }: Scored, today: string, first: string | undefined) {
   let best = 0;
   if (!first) return best;
-  for (let day = first, run = 0; day <= today; day = addDays(day, 1)) {
-    if (onTrack(kind, counts.get(day) ?? 0, targetOn(targets, day))) run++;
-    else if (day < today || kind === "limit") run = 0;
+  const sums = periodCounts(counts, period);
+  const now = periodOf(period, today);
+  for (let p = periodOf(period, first), run = 0; p <= now; p = addDays(p, length(period))) {
+    if (onTrack(kind, sums.get(p) ?? 0, periodTarget(targets, period, p))) run++;
+    else if (p < now || kind === "limit") run = 0;
     best = Math.max(best, run);
   }
   return best;
 }
 
-// Taps a day from the first logged day through yesterday, since today isn't over yet.
-// Tracking that began today has only today to go on.
-export function perDay(counts: Map<string, number>, today: string, first: string | undefined) {
+// Taps a period from the first logged one through the last that's over, since the current
+// one isn't. Tracking that began in the current period has only that to go on.
+export function perPeriod(counts: Map<string, number>, period: Period, today: string, first: string | undefined) {
   if (!first) return 0;
-  const last = first < today ? addDays(today, -1) : today;
-  let days = 0;
+  const sums = periodCounts(counts, period);
+  const step = length(period);
+  const start = periodOf(period, first);
+  const now = periodOf(period, today);
+  const last = start < now ? addDays(now, -step) : now;
+  let periods = 0;
   let taps = 0;
-  for (let day = first; day <= last; day = addDays(day, 1), days++) taps += counts.get(day) ?? 0;
-  return taps / days;
+  for (let p = start; p <= last; p = addDays(p, step), periods++) taps += sums.get(p) ?? 0;
+  return taps / periods;
 }
 
-// Today's streak from the run that ended yesterday, so the client can recount after a tap.
-// An unfinished goal day doesn't end a streak; a limit already over target today has.
+// The current period's streak from the run that ended before it, so the client can recount
+// after a tap. An unfinished goal doesn't end a streak; a limit already over target has.
 export function todayStreak(kind: Kind, target: number, count: number, before: number) {
   if (onTrack(kind, count, target)) return before + 1;
   return kind === "goal" ? before : 0;

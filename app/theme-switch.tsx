@@ -44,7 +44,7 @@ export function ThemeSwitch({ theme }: { theme?: Theme }) {
   }, []);
 
   return (
-    <div className="theme" role="radiogroup" aria-labelledby={id}>
+    <div className="words" role="radiogroup" aria-labelledby={id}>
       <span id={id}>Theme</span>
       {CHOICES.map(([value, name]) => (
         <label key={name}>

@@ -194,16 +194,17 @@
     font-weight: 500;
   }
 
-  /* Native radios drawn as three words; the chosen one keeps a trace, as the current page does. */
-  .theme {
+  /* Native radios drawn as words (the theme, a habit's period); the chosen one keeps a trace,
+     as the current page does. */
+  .words {
     display: flex;
     align-items: center;
   }
-  .theme > span {
+  .words > span {
     margin-right: 10px;
   }
   /* Each word is padded to a thumb's height. */
-  .theme label {
+  .words label {
     position: relative;
     display: flex;
     align-items: center;
@@ -211,10 +212,10 @@
     padding-inline: 6px;
     cursor: pointer;
   }
-  .theme label:has(:checked) {
+  .words label:has(:checked) {
     color: var(--color-ink);
   }
-  .theme .trace {
+  .words .trace {
     display: inline-block;
     padding-bottom: 6px;
     margin-bottom: -6px;
@@ -222,10 +223,10 @@
       left bottom 0.15rem,
       left bottom 0.15rem;
   }
-  .theme label:has(:checked) .trace {
+  .words label:has(:checked) .trace {
     --rest: 100%;
   }
-  .theme label:has(:focus-visible) .trace {
+  .words label:has(:focus-visible) .trace {
     border-radius: 4px;
     outline: 2px solid var(--color-ink);
     outline-offset: 4px;
@@ -234,10 +235,10 @@
       var(--rest) 1px;
   }
   @media (hover: hover) {
-    .theme label:hover {
+    .words label:hover {
       color: var(--color-ink);
     }
-    .theme label:hover .trace {
+    .words label:hover .trace {
       background-size:
         100% 2px,
         var(--rest) 1px;
@@ -334,9 +335,12 @@
     margin-top: 22px;
   }
   .days__grid {
+    --gap: 4px;
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 4px;
+    gap: var(--gap);
+    /* A week strip's corners follow its cells' size, read from the grid's width. */
+    container-type: inline-size;
   }
   .days__key {
     display: flex;
@@ -423,6 +427,50 @@
     outline-offset: 2px;
   }
 
+  /* A weekly habit's week: one die-cut strip in its state (a row on Today, a column in the year),
+     with a dot on each day that has a tap; --dot turns ground-coloured on a filled strip. */
+  .week {
+    --dot: var(--trace);
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: subgrid;
+    border-radius: calc((100cqi - 6 * var(--gap)) / 7 * 0.22);
+  }
+  .year__week[data-strip] {
+    --dot: var(--trace);
+    border-radius: calc(var(--cell) * 0.22);
+  }
+  .week[data-state="met"],
+  .year__week[data-strip="met"] {
+    --dot: var(--color-ground);
+    background: var(--trace);
+  }
+  .week:is([data-state="partial"], [data-state="missed"]),
+  .year__week:is([data-strip="partial"], [data-strip="missed"]) {
+    box-shadow: inset 0 0 0 1px var(--color-etch);
+  }
+  /* Cut through like a day over its limit, so it doesn't rely on colour alone. */
+  .week[data-state="over"],
+  .year__week[data-strip="over"] {
+    --dot: var(--color-ground);
+    background:
+      linear-gradient(to top right, transparent calc(50% - 0.8px), var(--color-ground) 0 calc(50% + 0.8px), transparent 0),
+      var(--color-short);
+  }
+  .week[data-today],
+  .year__week[data-today] {
+    outline: 1.5px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+  .cell[data-tapped] {
+    background: radial-gradient(circle, var(--dot) 2.5px, transparent 3px);
+  }
+  .days__key .week {
+    width: 16px;
+    height: 8px;
+    border-radius: 2px;
+  }
+
   .habit__coil {
     grid-area: coil;
     align-self: center;
@@ -467,7 +515,7 @@
       margin-top: 24px;
     }
     .days__grid {
-      gap: 6px;
+      --gap: 6px;
     }
     .days__grid .cell[data-rings] {
       --c: 5px;
@@ -1050,7 +1098,7 @@
   /* The radios stay in the page for the keyboard and screen readers; the labels draw them. */
   .kinds input,
   .swatch input,
-  .theme input {
+  .words input {
     position: absolute;
     opacity: 0;
     pointer-events: none;
@@ -1111,6 +1159,13 @@
   /* A goal's stepper keeps the "at most" line's room, so switching kind doesn't jump. */
   .stepper__per[data-hidden] {
     visibility: hidden;
+  }
+  .editor__period {
+    justify-content: center;
+    color: var(--color-muted);
+    font-size: var(--text-tiny);
+    line-height: var(--text-tiny--line-height);
+    font-weight: 500;
   }
   .stepper__per {
     margin-top: 2px;
