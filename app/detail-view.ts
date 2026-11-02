@@ -33,7 +33,7 @@ export type DetailView = {
   best: number;
   perPeriod: number;
   spacing: number | null;
-  next: string | null; // none while archived: nothing logs
+  next: string | null;
   year: Day[];
   day: string;
   dayTarget: number; // the target of the period holding `day`
@@ -79,7 +79,7 @@ export function toDetailView(h: HabitRecord, today: string, day: string, taps: T
     best: bestStreak(scored, end, first),
     perPeriod: perPeriod(counts, period, end, first),
     spacing: h.spacing_minutes,
-    next: archived ? null : nextFrom(h.logs?.[0]?.created_at, h.spacing_minutes, now),
+    next: nextFrom(h.logs?.[0]?.created_at, h.spacing_minutes, now),
     year: Array.from({ length: WEEKS * 7 }, (_, i) => {
       const d = addDays(start, i);
       return { day: d, count: counts.get(d) ?? 0, target: targetOn(targets, d) };

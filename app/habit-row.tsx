@@ -96,8 +96,7 @@ export function HabitRow({
         <p className="habit__status" data-tone={status.tone}>
           {status.label}
         </p>
-        {/* At the limit the status already says stop, so no line invites the next tap. */}
-        {habit.spacing && <NextFrom at={count < target ? habit.next : null} />}
+        {habit.spacing && <NextFrom at={habit.next} count={count} target={target} />}
       </div>
 
       <div className="habit__days">

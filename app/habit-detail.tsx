@@ -144,7 +144,7 @@ export function HabitDetail({
                 <p className="habit__status" data-tone={status.tone}>
                   {status.label}
                 </p>
-                {view.spacing && <NextFrom at={count < target ? view.next : null} />}
+                {view.spacing && <NextFrom at={view.next} count={count} target={target} />}
               </div>
             )}
             {first ? (

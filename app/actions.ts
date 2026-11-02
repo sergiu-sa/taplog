@@ -66,7 +66,7 @@ export async function saveHabit(id: number | null, _prev: Saved, form: FormData)
   const period = form.get("period");
   const target = Number(form.get("target"));
   const color = form.get("color");
-  // The editor sends no spacing for a goal, and the database refuses one.
+  // The editor sends none for a goal (the database refuses one) or a limit of 0.
   const spacing = kind === "limit" && form.get("spacing") ? Number(form.get("spacing")) : null;
   if (!name) return { error: "A name needs 1 to 40 characters." };
   if (kind !== "goal" && kind !== "limit") return { error: "Pick goal or limit." };

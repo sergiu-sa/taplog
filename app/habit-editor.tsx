@@ -36,7 +36,7 @@ export function HabitEditor({
   const [period, setPeriod] = useState<Period>(habit?.period ?? "day");
   const [target, setTarget] = useState(habit?.target ?? 1);
   const [color, setColor] = useState(habit?.color ?? firstColor);
-  // Kept while the kind is Goal, so switching back brings the pick back; a goal saves none.
+  // Kept while the field is hidden (a goal, a limit of 0), so the pick comes back; neither saves one.
   const [spacing, setSpacing] = useState(habit?.spacing ?? null);
   const step = STEPS.indexOf(spacing);
   const [state, formAction, saving] = useActionState(save, null);
@@ -139,8 +139,9 @@ export function HabitEditor({
                 </div>
               </fieldset>
             )}
-            {/* A pace, not a score: it never locks, so it stays a stepper after the first tap. */}
-            {kind === "limit" && (
+            {/* A pace, not a score: it never locks, so it stays a stepper after the first tap. A
+                limit of 0 never shows "Next from", so it offers none. */}
+            {kind === "limit" && target > 0 && (
               <div className="field">
                 <span id="spacing-label">Spacing</span>
                 <div className="stepper stepper--spacing" role="group" aria-labelledby="spacing-label">

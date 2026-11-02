@@ -3,16 +3,23 @@
 import { useEffect, useState } from "react";
 import { osloTime } from "@/lib/habits";
 
-// "Next from 15:40" for a spaced limit, until 15:40. The line keeps its room when empty, so
-// nothing under it moves. A plain timer, not GSAP's: that ticker stops in a hidden tab.
-export function NextFrom({ at }: { at: string | null }) {
+// "Next from 15:40" for a spaced limit, until 15:40, and never at or over the limit: the status
+// already says stop. A plain timer, not GSAP's: that ticker stops in a hidden tab.
+export function NextFrom({ at, count, target, className = "habit__next" }: { at: string | null; count: number; target: number; className?: string }) {
   // The time that has passed, rather than a flag: a new `at` shows without a reset.
   const [passed, setPassed] = useState<string | null>(null);
 
   useEffect(() => {
     if (!at) return;
-    const check = () => Date.now() >= Date.parse(at) && setPassed(at);
-    const timer = setTimeout(check, Date.parse(at) - Date.now());
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // A timer can run a hair before Date.now() reaches its time, so one that finds time left waits again.
+    const check = () => {
+      clearTimeout(timer);
+      const left = Date.parse(at) - Date.now();
+      if (left > 0) timer = setTimeout(check, left);
+      else setPassed(at);
+    };
+    timer = setTimeout(check, Date.parse(at) - Date.now());
     // A phone that slept can fire the timer late, so look again when the page is back.
     document.addEventListener("visibilitychange", check);
     return () => {
@@ -21,5 +28,5 @@ export function NextFrom({ at }: { at: string | null }) {
     };
   }, [at]);
 
-  return <p className="habit__next">{at && passed !== at && `Next from ${osloTime(at)}`}</p>;
+  return <p className={className}>{at && passed !== at && count < target && `Next from ${osloTime(at)}`}</p>;
 }
