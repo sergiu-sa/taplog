@@ -1,8 +1,9 @@
 import { refresh } from "next/cache";
 import { notFound } from "next/navigation";
-import { formatDay, formatGap, habitStatus, osloDay, pastStatus, periodEnd, periodOf, periodTarget, toneClass, type Kind, type Period } from "@/lib/habits";
+import { formatDay, formatGap, habitStatus, nextFrom, osloDay, pastStatus, periodEnd, periodOf, periodTarget, toneClass, type Kind, type Period } from "@/lib/habits";
 import { verifyId } from "@/lib/sig";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { NextFrom } from "../next-from";
 import { UndoButton } from "./undo-button";
 
 const UNDO_MS = 2 * 60_000;
@@ -35,7 +36,7 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
 
   const { data: log } = await supabaseAdmin
     .from("logs")
-    .select("created_at, habit_id, habits(name, kind, period, color, habit_targets(from_day, target))")
+    .select("created_at, habit_id, habits(name, kind, period, color, spacing_minutes, habit_targets(from_day, target))")
     .eq("id", Number(id))
     .maybeSingle()
     .throwOnError();
@@ -56,7 +57,7 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
   const period = habit.period as Period;
   const start = periodOf(period, osloDay(log.created_at));
 
-  const [{ data: counted }, { data: prev }] = await Promise.all([
+  const [{ data: counted }, { data: prev }, { data: newest }] = await Promise.all([
     supabaseAdmin
       .from("daily_counts")
       .select("count")
@@ -75,6 +76,17 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
           .maybeSingle()
           .throwOnError()
       : { data: null },
+    // A later tap may have come since this link was made; the pace runs from the newest.
+    habit.spacing_minutes
+      ? supabaseAdmin
+          .from("logs")
+          .select("created_at")
+          .eq("habit_id", log.habit_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+          .throwOnError()
+      : { data: null },
   ]);
 
   const count = counted.reduce((n, r) => n + r.count!, 0);
@@ -86,6 +98,7 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const current = start === periodOf(period, osloDay(now));
+  const next = current ? nextFrom(newest?.created_at, habit.spacing_minutes, now) : null;
 
   return (
     <main id="main" className="mx-auto flex min-h-dvh max-w-sm flex-col px-6 pt-16 pb-8">
@@ -113,6 +126,8 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
             : "First one logged"}
         </p>
       )}
+      {/* A sticker tap leaves this page as the open tab, so the line goes at its time here too. */}
+      {next && <NextFrom at={next} count={count} target={target} className="mt-1 text-neutral-500" />}
 
       {now - created < UNDO_MS && (
         <div className="mt-auto pt-10">

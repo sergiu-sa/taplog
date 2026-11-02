@@ -18,6 +18,7 @@ insert into habits (user_id, name, kind, daily_target, color) values
   ('00000000-0000-0000-0000-000000000001', 'Water', 'goal', 8, '#3B82F6'),
   ('00000000-0000-0000-0000-000000000001', 'Smokes', 'limit', 15, '#F97316'),
   ('00000000-0000-0000-0000-000000000001', 'Move', 'goal', 1, '#22C55E');
+update habits set spacing_minutes = 60 where name = 'Smokes';
 
 -- The trigger gave each habit today's target. Smokes was 10 until two weeks ago, so the grid
 -- shows older days scored on the old limit.

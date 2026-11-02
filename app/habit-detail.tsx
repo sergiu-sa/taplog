@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useOptimistic, useRef, useState, useTransition, type CSSProperties } from "react";
-import { addDays, formatDay, habitStatus, osloTime, pastStatus, periodOf, targetText, todayStreak, weekStart, type DayState, type Kind } from "@/lib/habits";
+import { addDays, formatDay, formatGap, habitStatus, osloTime, pastStatus, periodOf, targetText, todayStreak, weekStart, type DayState, type Kind } from "@/lib/habits";
 import { arrived, curtainFrom, ease, gsap, useMotion } from "@/lib/motion";
 import type { Made } from "./actions";
 import { Coil } from "./coil";
 import { CoilButton } from "./coil-button";
 import { PageTurn } from "./page-turn";
 import { CellKey, toCells, toWeeks, WeekKey, type Cell, type WeekCell } from "./day-cells";
+import { NextFrom } from "./next-from";
 import { WEEKS, type DetailView, type Tap } from "./detail-view";
 import { Stickers } from "./stickers";
 import { UNDO_S, useTally, type Add, type Remove } from "./use-tally";
@@ -123,9 +124,13 @@ export function HabitDetail({
             </h1>
             <p className="poster__kind">
               {kind === "goal" ? "Goal" : "Limit"} · {targetText(kind, target, period)} ·{" "}
-              <Link href={editHref} prefetch={false}>
-                Edit
-              </Link>
+              {/* Wraps before the spacing, so Edit never stands alone. */}
+              <span className="whitespace-nowrap">
+                {view.spacing && `${formatGap(view.spacing * 60_000)} apart · `}
+                <Link href={editHref} prefetch={false}>
+                  Edit
+                </Link>
+              </span>
             </p>
             {/* An archived habit has no today to count towards: its slot says so and offers Restore. */}
             {view.archived ? (
@@ -139,6 +144,7 @@ export function HabitDetail({
                 <p className="habit__status" data-tone={status.tone}>
                   {status.label}
                 </p>
+                {view.spacing && <NextFrom at={view.next} count={count} target={target} />}
               </div>
             )}
             {first ? (

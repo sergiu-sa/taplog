@@ -53,6 +53,7 @@ export type Database = {
           kind: string
           name: string
           period: string
+          spacing_minutes: number | null
           user_id: string
         }
         Insert: {
@@ -64,6 +65,7 @@ export type Database = {
           kind: string
           name: string
           period?: string
+          spacing_minutes?: number | null
           user_id?: string
         }
         Update: {
@@ -75,6 +77,7 @@ export type Database = {
           kind?: string
           name?: string
           period?: string
+          spacing_minutes?: number | null
           user_id?: string
         }
         Relationships: []

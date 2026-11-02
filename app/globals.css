@@ -328,6 +328,15 @@
   .habit__status[data-tone="over"] {
     color: var(--color-short);
   }
+  /* A spaced limit keeps this line's room when it's empty, so nothing under it moves. */
+  .habit__next {
+    min-height: 1lh;
+    margin-top: 2px;
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: 500;
+  }
 
   .habit__days {
     grid-area: days;
@@ -1031,8 +1040,10 @@
     align-content: start;
     gap: 22px;
   }
+  /* Not stretched to a taller fields column: the square coil would widen past its column. */
   .editor__coil {
     grid-column: 4 / 7;
+    align-self: start;
     display: grid;
     justify-items: center;
   }
@@ -1165,6 +1176,24 @@
   /* A goal's stepper keeps the "at most" line's room, so switching kind doesn't jump. */
   .stepper__per[data-hidden] {
     visibility: hidden;
+  }
+  /* The spacing's value is words ("1 h 30 min"), so it's set smaller than the target and the
+     stepper takes the field's width. */
+  .stepper--spacing {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: 4px;
+    max-width: 13rem;
+    margin-top: 0;
+  }
+  /* Meta size on phones: "1 h 30 min" fits between the buttons down to 375 px. */
+  .stepper--spacing output {
+    min-width: 0;
+    font-size: var(--text-meta);
+    font-weight: 650;
+    white-space: nowrap;
+  }
+  .stepper--spacing + .stepper__per {
+    text-align: center;
   }
   .editor__period {
     justify-content: center;
@@ -1311,6 +1340,9 @@
     }
     .stepper output {
       min-width: 5rem;
+    }
+    .stepper--spacing output {
+      font-size: var(--text-body);
     }
     .editor__save {
       justify-self: start;
