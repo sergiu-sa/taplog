@@ -6,6 +6,7 @@ import { formatDay, habitStatus, todayStreak, weekStart, type Kind, type Period 
 import { curtainFrom, ease, gsap, useMotion } from "@/lib/motion";
 import { CoilButton } from "./coil-button";
 import { CellKey, toCells, toWeeks, weekLabel, WeekKey, type Day } from "./day-cells";
+import { NextFrom } from "./next-from";
 import { useTally, type Add, type Remove } from "./use-tally";
 
 export type HabitView = {
@@ -18,6 +19,8 @@ export type HabitView = {
   count: number;
   before: number; // the streak that ended with the period before
   first?: string;
+  spacing: number | null; // minutes a limit asks between taps
+  next: string | null; // when that is up after the newest tap, while it's ahead
   days: Day[];
 };
 
@@ -93,6 +96,8 @@ export function HabitRow({
         <p className="habit__status" data-tone={status.tone}>
           {status.label}
         </p>
+        {/* At the limit the status already says stop, so no line invites the next tap. */}
+        {habit.spacing && <NextFrom at={count < target ? habit.next : null} />}
       </div>
 
       <div className="habit__days">

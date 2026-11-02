@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { pickDay, toDetailView } from "../../../../detail-view";
 import { HabitDetail } from "../../../../habit-detail";
 import { previewAdd, previewRemove, previewDone, previewToken } from "../../../actions";
-import { fixtureRecent, fixtures, fixtureTaps, today } from "../../../fixtures";
+import { fixtureRecent, fixtures, fixtureTaps, today, withNewest } from "../../../fixtures";
 
 export async function generateMetadata({ params }: PageProps<"/preview/[fixture]/h/[id]">): Promise<Metadata> {
   const { fixture, id } = await params;
@@ -17,10 +17,13 @@ export default async function PreviewHabit({ params, searchParams }: PageProps<"
   const habit = Object.hasOwn(fixtures, fixture) ? fixtures[fixture].find((h) => h.id === Number(id)) : undefined;
   if (!habit) notFound();
   const day = pickDay((await searchParams).day, today);
+  // Server Components render once per request, so this is just the request time.
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
 
   return (
     <HabitDetail
-      view={toDetailView(habit, today, day, fixtureTaps(habit, day), fixtureRecent(habit))}
+      view={toDetailView(withNewest(habit, now), today, day, fixtureTaps(habit, day), fixtureRecent(habit), now)}
       today={today}
       now="14:30"
       backHref={`/preview/${fixture}`}

@@ -183,6 +183,17 @@ export function todayStreak(kind: Kind, target: number, count: number, before: n
   return kind === "goal" ? before : 0;
 }
 
+// The spacings a limit can ask for, in minutes; habits_spacing_check holds the same list.
+export const SPACINGS = [30, 45, 60, 90, 120, 180, 240];
+
+// When a spaced limit's next tap is due: its newest tap plus the spacing, while that's ahead.
+// It paces and never scores, so no status or streak reads it.
+export function nextFrom(last: string | null | undefined, minutes: number | null, now: number) {
+  if (!last || !minutes) return null;
+  const at = Date.parse(last) + minutes * 60_000;
+  return at > now ? new Date(at).toISOString() : null;
+}
+
 export function formatGap(ms: number) {
   const min = Math.floor(ms / 60_000);
   if (min < 1) return "under a minute";

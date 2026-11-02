@@ -51,7 +51,7 @@ export default async function HabitPage({ params, searchParams }: PageProps<"/h/
 
   return (
     <HabitDetail
-      view={toDetailView(habit, today, day, taps, recent.map((r) => r.created_at))}
+      view={toDetailView(habit, today, day, taps, recent.map((r) => r.created_at), now)}
       today={today}
       now={osloTime(now)}
       editHref={`/h/${id}/edit`}

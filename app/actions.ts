@@ -3,7 +3,7 @@
 import { refresh, revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect, RedirectType } from "next/navigation";
-import { MAX_TARGET, minTarget } from "@/lib/habits";
+import { MAX_TARGET, minTarget, SPACINGS } from "@/lib/habits";
 import { PALETTE } from "@/lib/palette";
 import { createClient } from "@/lib/supabase/server";
 
@@ -66,6 +66,8 @@ export async function saveHabit(id: number | null, _prev: Saved, form: FormData)
   const period = form.get("period");
   const target = Number(form.get("target"));
   const color = form.get("color");
+  // The editor sends no spacing for a goal, and the database refuses one.
+  const spacing = kind === "limit" && form.get("spacing") ? Number(form.get("spacing")) : null;
   if (!name) return { error: "A name needs 1 to 40 characters." };
   if (kind !== "goal" && kind !== "limit") return { error: "Pick goal or limit." };
   if (period !== "day" && period !== "week") return { error: "Pick a day or a week." };
@@ -73,8 +75,9 @@ export async function saveHabit(id: number | null, _prev: Saved, form: FormData)
     return { error: `The target runs from ${minTarget(kind)} to ${MAX_TARGET}.` };
   }
   if (!PALETTE.some((c) => c.hex === color)) return { error: "Pick a colour." };
+  if (spacing !== null && !SPACINGS.includes(spacing)) return { error: "Pick a spacing." };
   // daily_target holds the target per period, a week's too.
-  const fields = { name, kind, period, daily_target: target, color: color as string };
+  const fields = { name, kind, period, daily_target: target, color: color as string, spacing_minutes: spacing };
 
   const { data, error } =
     id === null

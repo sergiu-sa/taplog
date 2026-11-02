@@ -18,15 +18,18 @@ export default async function Page() {
   const [{ data: habits }, { data: loose }] = await Promise.all([
     supabase
       .from("habits")
-      .select("id, name, kind, period, color, archived_at, daily_counts(day, count), habit_targets(from_day, target)")
+      .select("id, name, kind, period, color, archived_at, spacing_minutes, daily_counts(day, count), habit_targets(from_day, target), logs(created_at)")
       .order("name")
+      .order("created_at", { referencedTable: "logs", ascending: false })
+      .limit(1, { referencedTable: "logs" })
       .throwOnError(),
     supabase.from("stickers").select("id, name:label").is("habit_id", null).order("id").throwOnError(),
   ]);
 
   // Server Components render once per request, so this is just the request time.
   // eslint-disable-next-line react-hooks/purity
-  const today = osloDay(Date.now());
+  const now = Date.now();
+  const today = osloDay(now);
 
-  return <Dashboard today={today} {...splitHabits(habits, today)} loose={loose} add={addLog} remove={removeLog} theme={await readTheme()} />;
+  return <Dashboard today={today} {...splitHabits(habits, today, now)} loose={loose} add={addLog} remove={removeLog} theme={await readTheme()} />;
 }

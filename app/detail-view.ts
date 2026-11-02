@@ -1,4 +1,4 @@
-import { addDays, bestStreak, formatDay, osloDay, osloHour, osloTime, periodCounts, periodOf, periodTarget, perPeriod, runBefore, targetOn, weekStart, type Kind, type Period } from "@/lib/habits";
+import { addDays, bestStreak, formatDay, nextFrom, osloDay, osloHour, osloTime, periodCounts, periodOf, periodTarget, perPeriod, runBefore, targetOn, weekStart, type Kind, type Period } from "@/lib/habits";
 import { countsOf, type HabitRecord } from "./dashboard";
 import type { Day } from "./day-cells";
 
@@ -32,6 +32,8 @@ export type DetailView = {
   first?: string;
   best: number;
   perPeriod: number;
+  spacing: number | null;
+  next: string | null; // none while archived: nothing logs
   year: Day[];
   day: string;
   dayTarget: number; // the target of the period holding `day`
@@ -48,7 +50,7 @@ export function pickDay(asked: string | string[] | undefined, today: string) {
 }
 
 // `taps` are the selected day's; `recent` the last 30 days' tap times, for the hours strip.
-export function toDetailView(h: HabitRecord, today: string, day: string, taps: TapRecord[], recent: string[]): DetailView {
+export function toDetailView(h: HabitRecord, today: string, day: string, taps: TapRecord[], recent: string[], now: number): DetailView {
   const kind = h.kind as Kind;
   const period = h.period as Period;
   const { counts, first } = countsOf(h);
@@ -76,6 +78,8 @@ export function toDetailView(h: HabitRecord, today: string, day: string, taps: T
     first,
     best: bestStreak(scored, end, first),
     perPeriod: perPeriod(counts, period, end, first),
+    spacing: h.spacing_minutes,
+    next: archived ? null : nextFrom(h.logs?.[0]?.created_at, h.spacing_minutes, now),
     year: Array.from({ length: WEEKS * 7 }, (_, i) => {
       const d = addDays(start, i);
       return { day: d, count: counts.get(d) ?? 0, target: targetOn(targets, d) };
@@ -103,6 +107,7 @@ export type EditorView = {
   period: Period;
   target: number;
   kept: number; // what the periods before this one were scored on
+  spacing: number | null;
   color: string;
   archived: boolean;
   taps: number; // all of them: the kind locks at the first, and Delete says how many go
@@ -119,6 +124,7 @@ export function toEditorView(h: HabitRecord, today: string): EditorView {
     period,
     target: periodTarget(h.habit_targets, period, now),
     kept: targetOn(h.habit_targets, addDays(now, -1)),
+    spacing: h.spacing_minutes,
     color: h.color,
     archived: h.archived_at !== null,
     taps: h.daily_counts.reduce((n, r) => n + r.count!, 0),

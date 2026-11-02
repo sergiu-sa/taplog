@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
-import { formatDay, MAX_TARGET, minTarget, type Kind, type Period } from "@/lib/habits";
+import { formatDay, formatGap, MAX_TARGET, minTarget, SPACINGS, type Kind, type Period } from "@/lib/habits";
 import { ease, gsap, useMotion } from "@/lib/motion";
 import { PALETTE } from "@/lib/palette";
 import type { Saved } from "./actions";
 import { Coil } from "./coil";
 import type { EditorView } from "./detail-view";
+
+const STEPS = [null, ...SPACINGS];
 
 // Make or edit a habit. The coil is a specimen, fully wound, so the stepper's turns and the
 // colour both show; it says nothing about today's count.
@@ -34,6 +36,9 @@ export function HabitEditor({
   const [period, setPeriod] = useState<Period>(habit?.period ?? "day");
   const [target, setTarget] = useState(habit?.target ?? 1);
   const [color, setColor] = useState(habit?.color ?? firstColor);
+  // Kept while the kind is Goal, so switching back brings the pick back; a goal saves none.
+  const [spacing, setSpacing] = useState(habit?.spacing ?? null);
+  const step = STEPS.indexOf(spacing);
   const [state, formAction, saving] = useActionState(save, null);
   // Set in the same tick as the submit, before saving shows: a double click must not make two habits.
   const sent = useRef(false);
@@ -133,6 +138,33 @@ export function HabitEditor({
                   ))}
                 </div>
               </fieldset>
+            )}
+            {/* A pace, not a score: it never locks, so it stays a stepper after the first tap. */}
+            {kind === "limit" && (
+              <div className="field">
+                <span id="spacing-label">Spacing</span>
+                <div className="stepper stepper--spacing" role="group" aria-labelledby="spacing-label">
+                  <button type="button" aria-label="Less time" aria-disabled={step === 0 || undefined} onClick={() => setSpacing(STEPS[Math.max(0, step - 1)])}>
+                    −
+                  </button>
+                  <output aria-live="polite">
+                    {spacing ? formatGap(spacing * 60_000) : "Off"}
+                    {spacing && <span className="sr-only"> between taps</span>}
+                  </output>
+                  <button
+                    type="button"
+                    aria-label="More time"
+                    aria-disabled={step === STEPS.length - 1 || undefined}
+                    onClick={() => setSpacing(STEPS[Math.min(STEPS.length - 1, step + 1)])}
+                  >
+                    +
+                  </button>
+                  <input type="hidden" name="spacing" value={spacing ?? ""} />
+                </div>
+                <p className="stepper__per" data-hidden={!spacing || undefined}>
+                  between taps
+                </p>
+              </div>
             )}
           </div>
 

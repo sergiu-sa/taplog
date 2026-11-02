@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { coil } from "@/lib/coil";
-import { addDays, formatDay, periodCounts, periodOf, periodTarget, runBefore, targetOn, weekStart, type Kind, type Period } from "@/lib/habits";
+import { addDays, formatDay, nextFrom, periodCounts, periodOf, periodTarget, runBefore, targetOn, weekStart, type Kind, type Period } from "@/lib/habits";
 import type { Tables } from "@/lib/supabase/types";
 import type { Theme } from "@/lib/theme";
 import { HabitRow, type HabitView } from "./habit-row";
@@ -13,10 +13,11 @@ const WEEKS = 5;
 
 // The shape the dashboard query returns. Fixtures use it too, so the preview goes
 // through the same conversion as real data.
-export type HabitRecord = Pick<Tables<"habits">, "id" | "name" | "kind" | "period" | "color" | "archived_at"> & {
+export type HabitRecord = Pick<Tables<"habits">, "id" | "name" | "kind" | "period" | "color" | "archived_at" | "spacing_minutes"> & {
   daily_counts: Pick<Tables<"daily_counts">, "day" | "count">[];
   habit_targets: Pick<Tables<"habit_targets">, "from_day" | "target">[];
   stickers?: Pick<Tables<"stickers">, "id" | "label" | "last_tap_at">[];
+  logs?: Pick<Tables<"logs">, "created_at">[]; // the newest tap alone, for "Next from"
 };
 
 // Each logged day's count, and the first logged day: tracking starts there.
@@ -27,7 +28,7 @@ export function countsOf(h: HabitRecord) {
 }
 
 // Count, target and run are the current period's: today, or this week for a weekly habit.
-export function toHabitView(h: HabitRecord, today: string): HabitView {
+export function toHabitView(h: HabitRecord, today: string, instant: number): HabitView {
   const kind = h.kind as Kind;
   const period = h.period as Period;
   const { counts, first } = countsOf(h);
@@ -43,6 +44,8 @@ export function toHabitView(h: HabitRecord, today: string): HabitView {
     count: periodCounts(counts, period).get(now) ?? 0,
     before: runBefore({ kind, period, targets: h.habit_targets, counts }, today, first),
     first,
+    spacing: h.spacing_minutes,
+    next: nextFrom(h.logs?.[0]?.created_at, h.spacing_minutes, instant),
     days: Array.from({ length: WEEKS * 7 }, (_, i) => {
       const day = addDays(monday, i - 7 * (WEEKS - 1));
       return { day, count: counts.get(day) ?? 0, target: targetOn(h.habit_targets, day) };
@@ -53,9 +56,9 @@ export function toHabitView(h: HabitRecord, today: string): HabitView {
 export type Shelved = { id: number; name: string };
 
 // Today's habits, and the archived ones by name for the shelf under them.
-export function splitHabits(records: HabitRecord[], today: string) {
+export function splitHabits(records: HabitRecord[], today: string, now: number) {
   return {
-    habits: records.filter((h) => !h.archived_at).map((h) => toHabitView(h, today)),
+    habits: records.filter((h) => !h.archived_at).map((h) => toHabitView(h, today, now)),
     archived: records.filter((h) => h.archived_at).map(({ id, name }) => ({ id, name })),
   };
 }
