@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useSyncExternalStore } from "react";
+import { GROUND } from "@/lib/palette";
 import type { Theme } from "@/lib/theme";
 
 const CHOICES: [Theme | undefined, string][] = [
@@ -15,6 +16,10 @@ function show(theme?: Theme) {
   const html = document.documentElement;
   if (theme) html.dataset.theme = theme;
   else delete html.dataset.theme;
+  // The same rule as the layout's theme-color tags, which only change on the next render.
+  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+    meta.content = GROUND[theme ?? (meta.media.includes("dark") ? "dark" : "light")];
+  }
 }
 
 // The cookie is for the server's next render; the attribute switches this page now, with no
