@@ -11,6 +11,10 @@ export const PALETTE = [
   { name: "Fuchsia", hex: "#D946EF" },
 ] as const;
 
+// The page ground (--color-ground in globals.css) for what CSS can't colour: the theme-color
+// tags and the manifest. Change both together.
+export const GROUND = { light: "#F3F4F1", dark: "#0D0E0D" } as const;
+
 // A new habit starts in the first colour none of the others wear.
 export function freeColor(habits: { color: string }[]) {
   return (PALETTE.find((c) => !habits.some((h) => h.color === c.hex)) ?? PALETTE[5]).hex;

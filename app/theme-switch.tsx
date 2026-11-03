@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useSyncExternalStore } from "react";
+import { GROUND } from "@/lib/palette";
 import type { Theme } from "@/lib/theme";
 
 const CHOICES: [Theme | undefined, string][] = [
@@ -9,12 +10,16 @@ const CHOICES: [Theme | undefined, string][] = [
   ["dark", "Dark"],
 ];
 
-const cookieTheme = () => document.cookie.match(/(?:^|; )theme=(light|dark)(?:;|$)/)?.[1] as Theme | undefined;
+export const cookieTheme = () => document.cookie.match(/(?:^|; )theme=(light|dark)(?:;|$)/)?.[1] as Theme | undefined;
 
-function show(theme?: Theme) {
+export function show(theme?: Theme) {
   const html = document.documentElement;
   if (theme) html.dataset.theme = theme;
   else delete html.dataset.theme;
+  // The same rule as the layout's theme-color tags, which only change on the next render.
+  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+    meta.content = GROUND[theme ?? (meta.media.includes("dark") ? "dark" : "light")];
+  }
 }
 
 // The cookie is for the server's next render; the attribute switches this page now, with no
@@ -22,9 +27,19 @@ function show(theme?: Theme) {
 function pick(theme?: Theme) {
   show(theme);
   document.cookie = theme ? `theme=${theme}; path=/; max-age=31536000; samesite=lax` : "theme=; path=/; max-age=0";
+  window.dispatchEvent(new Event("themechange"));
 }
 
-const subscribe = () => () => {};
+// The cookie changes on a pick here, or in another window that shares it (Chrome's installed
+// app and its tabs), which this page sees when it comes back to the screen.
+function subscribe(change: () => void) {
+  window.addEventListener("themechange", change);
+  document.addEventListener("visibilitychange", change);
+  return () => {
+    window.removeEventListener("themechange", change);
+    document.removeEventListener("visibilitychange", change);
+  };
+}
 
 // A radiogroup rather than a fieldset: WebKit won't lay a legend out in a row with its radios.
 export function ThemeSwitch({ theme }: { theme?: Theme }) {
@@ -48,7 +63,7 @@ export function ThemeSwitch({ theme }: { theme?: Theme }) {
       <span id={id}>Theme</span>
       {CHOICES.map(([value, name]) => (
         <label key={name}>
-          <input type="radio" name="theme" defaultChecked={value === current} onChange={() => pick(value)} />
+          <input type="radio" name="theme" checked={value === current} onChange={() => pick(value)} />
           <span className="trace">{name}</span>
         </label>
       ))}

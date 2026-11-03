@@ -7,6 +7,7 @@ import { ease, gsap, useMotion } from "@/lib/motion";
 import { Coil } from "./coil";
 import type { Made } from "./actions";
 import type { StickerRow, StickerView } from "./detail-view";
+import { Refresh } from "./refresh";
 
 type Run = () => Promise<string | void>;
 
@@ -262,6 +263,7 @@ export function StickerPage({
 
   return (
     <div className="page" style={{ "--habit": habit?.color ?? "#3B82F6" } as CSSProperties}>
+      <Refresh />
       <header className="masthead">
         <Link href={backHref} prefetch={false} className="trace">
           ← {habit?.name ?? "Today"}

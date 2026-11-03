@@ -6,6 +6,7 @@ import type { Tables } from "@/lib/supabase/types";
 import type { Theme } from "@/lib/theme";
 import { HabitRow, type HabitView } from "./habit-row";
 import { PageTurn } from "./page-turn";
+import { Refresh } from "./refresh";
 import { ThemeSwitch } from "./theme-switch";
 import type { Add, Remove } from "./use-tally";
 
@@ -94,6 +95,7 @@ export function Dashboard({
   const weekly = habits.some((h) => h.period === "week");
   return (
     <PageTurn>
+      <Refresh />
       <div className="page">
         <header className="masthead">
           <Link href="/" prefetch={false} className="trace" aria-current="page">
