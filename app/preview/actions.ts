@@ -21,6 +21,13 @@ export async function previewRemove(id: number): Promise<Removed | null> {
   return { habitId: 0, createdAt: new Date().toISOString() };
 }
 
+export async function previewUndo(): Promise<string | null> {
+  if (process.env.DESIGN_PREVIEW !== "1") return null;
+  await pause();
+  console.log("preview undo");
+  return null;
+}
+
 // Save, Archive, Restore and Delete in the preview: nothing to save and nowhere to go.
 export async function previewSave(_prev: Saved, form: FormData): Promise<Saved> {
   if (process.env.DESIGN_PREVIEW !== "1") return null;

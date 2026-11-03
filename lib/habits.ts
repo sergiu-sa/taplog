@@ -2,13 +2,6 @@ export type Kind = "goal" | "limit";
 export type Period = "day" | "week";
 export type Tone = "progress" | "done" | "warn" | "over";
 
-export const toneClass: Record<Tone, string> = {
-  progress: "",
-  done: "text-emerald-600 dark:text-emerald-400",
-  warn: "text-amber-600 dark:text-amber-400",
-  over: "text-red-600 dark:text-red-400",
-};
-
 // Past 20 turns the coil blurs; a limit of 0 means none at all, a goal of 0 would always be met.
 // habits_daily_target_check in the database holds the same range.
 export const MAX_TARGET = 20;
