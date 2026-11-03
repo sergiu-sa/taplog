@@ -1283,14 +1283,6 @@
   }
   .editor__save {
     grid-column: 1 / -1;
-    width: 100%;
-    height: 56px;
-    border-radius: 12px;
-    font-size: var(--text-body);
-  }
-  .editor__save:disabled {
-    cursor: progress;
-    opacity: 0.6;
   }
   .editor__more {
     display: flex;

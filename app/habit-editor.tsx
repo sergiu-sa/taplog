@@ -228,7 +228,7 @@ export function HabitEditor({
               {state.error}
             </p>
           )}
-          <button type="submit" className="button editor__save" disabled={saving}>
+          <button type="submit" className="button button--wide editor__save" disabled={saving}>
             {habit ? "Save" : "Add habit"}
           </button>
         </form>
