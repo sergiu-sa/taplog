@@ -742,7 +742,7 @@
       opacity: 0.5;
       scale: 1.12;
     }
-    .coil:hover .coil__turn[data-next] {
+    .coil:not(.coil--still):hover .coil__turn[data-next] {
       visibility: visible;
       stroke: var(--tone);
       stroke-width: var(--w);
@@ -2054,6 +2054,53 @@
     .year__week .cell[data-rings] {
       --c: 3px;
       --p: 2.25px;
+    }
+  }
+
+  /* The 404s: a still coil and a few lines. On phones the coil takes half the row
+     above them; on desktop the pair sits apart, coil on columns 2 to 5, text on 7 to 11. */
+  .pair {
+    padding-block: 24px 48px;
+  }
+  .pair__coil {
+    width: calc(50% - var(--gutter) / 2);
+  }
+  .pair__text .title {
+    padding-bottom: 0;
+  }
+  .pair__body {
+    margin-top: 12px;
+    max-width: 34rem;
+    color: var(--color-muted);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    text-wrap: pretty;
+  }
+  .pair__more {
+    margin-top: 16px;
+    font-weight: 600;
+  }
+  .pair__more a {
+    display: inline-block;
+    padding-block: 0.7rem;
+  }
+  @media (width >= 68.75rem) {
+    .pair {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: var(--gutter);
+      align-items: center;
+      padding-block: clamp(40px, 9vh, 112px) 64px;
+    }
+    .pair__coil {
+      grid-column: 2 / 6;
+      width: auto;
+    }
+    .pair__text {
+      grid-column: 7 / 12;
+    }
+    .pair__text .title {
+      margin-top: 0;
     }
   }
 
