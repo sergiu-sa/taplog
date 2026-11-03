@@ -1,6 +1,10 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { redirect, RedirectType } from "next/navigation";
+import { safeNext } from "@/lib/login";
 import { createClient } from "@/lib/supabase/server";
 import { LoginForm, type LoginState } from "./login-form";
+
+export const metadata: Metadata = { title: "Sign in" };
 
 // The Supabase email template must carry only {{ .Token }}: a link shares the same
 // one-time token, so a mail preview or scanner opening it would void the code.
@@ -25,14 +29,21 @@ async function login(_prev: LoginState, formData: FormData): Promise<LoginState>
     console.error("verifyOtp:", error.message);
     return { email, error: "That code didn't work. Codes expire after an hour and work once." };
   }
-  redirect("/");
+  // Checked again here: this action is a POST anyone can send, whatever the page put in the form.
+  // Replace, so Back from the page you return to doesn't reopen the code form.
+  redirect(safeNext(formData.get("next")), RedirectType.replace);
 }
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: PageProps<"/login">) {
+  const next = safeNext((await searchParams).next);
   return (
-    <main id="main" className="mx-auto flex min-h-dvh max-w-sm flex-col px-6 pt-16">
-      <h1 className="text-2xl font-semibold">taplog</h1>
-      <LoginForm action={login} />
-    </main>
+    <div className="page">
+      <header className="masthead">
+        <span>taplog</span>
+      </header>
+      <main id="main" tabIndex={-1} className="login">
+        <LoginForm action={login} next={next} />
+      </main>
+    </div>
   );
 }

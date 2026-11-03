@@ -163,7 +163,7 @@
     line-height: var(--text-meta--line-height);
     font-weight: 500;
   }
-  .masthead a {
+  .masthead > :first-child {
     padding-block: 0.5rem;
     font-weight: 700;
     letter-spacing: -0.01em;
@@ -250,7 +250,8 @@
   .editor,
   .sticker-page,
   .pick__habit,
-  .logged {
+  .logged,
+  .strip__slot {
     --trace: light-dark(color-mix(in oklab, var(--habit) 80%, black), var(--habit));
     --glint: color-mix(in oklab, var(--habit) 45%, white);
   }
@@ -2118,6 +2119,165 @@
     }
   }
 
+  /* Sign-in: the code as a strip of eight stickers on their liner, each digit wound as a coil
+     with that many turns, lit in the habit palette in its order. */
+  .login {
+    padding-block: 4px 48px;
+  }
+  .login__form {
+    display: grid;
+    gap: 12px;
+  }
+  .login__note {
+    max-width: 34rem;
+    color: var(--color-muted);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    text-wrap: pretty;
+  }
+  .login__controls {
+    display: grid;
+    gap: 12px;
+    max-width: 26rem;
+    margin-top: 8px;
+  }
+  .login__input {
+    height: 56px;
+    min-width: 0;
+    padding-inline: 16px;
+    border: 1px solid var(--color-etch);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--color-ink);
+    font-size: max(1rem, var(--text-body));
+    font-weight: 600;
+  }
+  .login__input::placeholder {
+    color: var(--color-muted);
+    font-weight: 500;
+    opacity: 1;
+  }
+  .login__error {
+    min-height: 1lh;
+    color: var(--color-short);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: 500;
+  }
+  .login__other {
+    justify-self: start;
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+  }
+
+  .strip {
+    position: relative;
+    margin-block: 8px 4px;
+  }
+  .strip__slots {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px var(--gutter);
+  }
+  .strip__slot {
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+  }
+  /* A digit never winds past its edge, so the spill room goes and the sticker fills its slot. */
+  .strip__slot .coil__svg {
+    scale: 1.3;
+  }
+  .strip__digit {
+    min-height: 1lh;
+    font-size: var(--text-name);
+    line-height: var(--text-name--line-height);
+    font-weight: var(--text-name--font-weight);
+    font-variant-numeric: tabular-nums;
+  }
+  /* An empty slot is a dashed die-cut edge with nothing in it; a digit closes the dashes. */
+  .strip__slot .coil__edge {
+    stroke-dasharray: 7.7 0;
+    transition:
+      stroke 0.35s var(--ease-soft),
+      stroke-width 0.35s var(--ease-soft),
+      stroke-dasharray 0.7s var(--ease-out);
+  }
+  .strip__slot:not([data-filled]) .coil__edge {
+    stroke: var(--color-etch);
+    stroke-width: 0.9;
+    stroke-dasharray: 4.5 3.2;
+  }
+  .strip__slot:not([data-filled]) .coil__chip {
+    visibility: hidden;
+  }
+  /* The caret: where the next digit goes, its edge drawn in ink. */
+  .strip:focus-within .strip__slot[data-next] .coil__edge {
+    stroke: var(--color-ink);
+    stroke-width: 1.6;
+  }
+  /* One real field over the strip, so paste, the code from Mail and screen readers all work;
+     its own text and caret are hidden, since the stickers draw the code. */
+  .strip__input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    caret-color: transparent;
+    font-size: 16px;
+    cursor: text;
+  }
+  .strip__input:focus-visible {
+    outline: none;
+  }
+  .strip__input::selection {
+    background: transparent;
+  }
+  @media (width >= 48rem) {
+    .strip__slots {
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+    }
+  }
+  @media (width >= 68.75rem) {
+    /* A poster: the strip across the sheet, centred in the window. */
+    .login {
+      display: grid;
+      align-content: center;
+      min-height: calc(100dvh - 3rem);
+      padding-block: 32px 64px;
+    }
+    .login .title {
+      margin-top: 0;
+      padding-bottom: 28px;
+    }
+    /* The strip's eight columns, so the note sits under stickers 1 to 4 and the controls under 6 to 8. */
+    .login__form {
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      column-gap: var(--gutter);
+      row-gap: 36px;
+    }
+    .strip {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      margin: 0;
+    }
+    .login__note {
+      grid-column: 1 / 5;
+      grid-row: 2;
+    }
+    .login__controls {
+      grid-column: 6 / 9;
+      grid-row: 2;
+      max-width: none;
+      margin: 0;
+    }
+  }
+
   /* /logged: what the tap did, then Undo at the bottom where the thumb is. */
   .logged__main {
     display: flex;
@@ -2236,7 +2396,8 @@
     .editor .coil__edge,
     .editor .coil__chip,
     .editor .coil__lead,
-    .editor .coil__bridge {
+    .editor .coil__bridge,
+    .strip__slot .coil__edge {
       transition: none;
     }
   }
