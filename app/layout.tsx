@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   title: { default: "taplog", template: "%s · taplog" },
   description: "A private habit log fed by NFC sticker taps, counted per Oslo day.",
   robots: { index: false, follow: false },
+  // Otherwise the Home Screen offers the page title, "Today · taplog".
+  appleWebApp: { title: "taplog" },
 };
 
 // The chosen theme arrives in the server's HTML, so the first frame is right without a script.
