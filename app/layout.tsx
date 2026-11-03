@@ -14,7 +14,6 @@ export const metadata: Metadata = {
   appleWebApp: { title: "taplog" },
 };
 
-
 // The chosen theme arrives in the server's HTML, so the first frame is right without a script.
 // Reading the cookie renders every page per request, /login included.
 export default async function RootLayout({ children }: LayoutProps<"/">) {
