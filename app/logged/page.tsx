@@ -1,12 +1,14 @@
 import { refresh } from "next/cache";
 import { notFound } from "next/navigation";
-import { formatDay, formatGap, habitStatus, nextFrom, osloDay, pastStatus, periodEnd, periodOf, periodTarget, toneClass, type Kind, type Period } from "@/lib/habits";
+import { formatDay, habitStatus, nextFrom, osloDay, pastStatus, periodEnd, periodOf, periodTarget, type Kind, type Period } from "@/lib/habits";
 import { verifyId } from "@/lib/sig";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { NextFrom } from "../next-from";
+import { LoggedUndone, LoggedView, sinceLine } from "./logged-view";
 import { UndoButton } from "./undo-button";
 
 const UNDO_MS = 2 * 60_000;
+// The newest turn draws in on the tap's own load, not again when the tab reloads later.
+const FRESH_MS = 15_000;
 
 // Reachable by any POST, not just this page's button, so it re-verifies everything.
 async function undo(_prev: string | null, formData: FormData) {
@@ -42,15 +44,7 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
     .throwOnError();
 
   // A valid signature means /t created this row, so if it's gone it was deleted.
-  if (!log) {
-    return (
-      <main id="main" className="mx-auto flex min-h-dvh max-w-sm flex-col px-6 pt-16">
-        <p className="text-sm font-medium text-neutral-500">Undone</p>
-        <h1 className="mt-2 text-2xl font-semibold">That tap was removed</h1>
-        <p className="mt-2 text-neutral-500">It no longer counts.</p>
-      </main>
-    );
-  }
+  if (!log) return <LoggedUndone />;
 
   const habit = log.habits;
   const kind = habit.kind as Kind;
@@ -97,43 +91,24 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
   // Server Components render once per request, so this is just the request time.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
+  const age = now - created;
   const current = start === periodOf(period, osloDay(now));
   const next = current ? nextFrom(newest?.created_at, habit.spacing_minutes, now) : null;
 
   return (
-    <main id="main" className="mx-auto flex min-h-dvh max-w-sm flex-col px-6 pt-16 pb-8">
-      <p className="text-sm font-medium text-neutral-500">
-        {dup ? "Already counted" : "✓ Logged"}
-      </p>
-      <h1 className="mt-2 flex items-center gap-2.5 text-2xl font-semibold">
-        <span className="size-3 rounded-full" style={{ backgroundColor: habit.color }} />
-        {habit.name}
-      </h1>
-
-      <p className="mt-12 text-sm text-neutral-500">
-        {period === "week" ? (current ? "This week" : `Week of ${formatDay(start, "date")}`) : current ? "Today" : start}
-      </p>
-      <p className={`text-7xl font-bold tabular-nums ${toneClass[status.tone]}`}>
-        {count}
-        <span className="text-4xl font-semibold text-neutral-400"> / {target}</span>
-      </p>
-      <p className={`mt-1 text-lg font-medium ${toneClass[status.tone]}`}>{current ? status.label : pastStatus(kind, count, target)}</p>
-
-      {kind === "limit" && (
-        <p className="mt-6 text-neutral-500">
-          {prev
-            ? `${formatGap(created - new Date(prev.created_at).getTime())} since the previous one`
-            : "First one logged"}
-        </p>
-      )}
-      {/* A sticker tap leaves this page as the open tab, so the line goes at its time here too. */}
-      {next && <NextFrom at={next} count={count} target={target} className="mt-1 text-neutral-500" />}
-
-      {now - created < UNDO_MS && (
-        <div className="mt-auto pt-10">
-          <UndoButton id={id} sig={sig} action={undo} />
-        </div>
-      )}
-    </main>
+    <LoggedView
+      dup={Boolean(dup)}
+      fresh={age < FRESH_MS}
+      name={habit.name}
+      kind={kind}
+      color={habit.color}
+      when={period === "week" ? (current ? "This week" : `Week of ${formatDay(start, "date")}`) : current ? "Today" : formatDay(start)}
+      count={count}
+      target={target}
+      status={{ tone: status.tone, label: current ? status.label : pastStatus(kind, count, target) }}
+      since={kind === "limit" ? sinceLine(created, prev?.created_at) : null}
+      next={next}
+      undo={age < UNDO_MS && <UndoButton id={id} sig={sig} action={undo} />}
+    />
   );
 }

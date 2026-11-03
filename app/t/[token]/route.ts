@@ -8,12 +8,14 @@ const TOKEN = /^[A-Za-z0-9_-]{22}$/;
 
 export async function GET(request: NextRequest, ctx: RouteContext<"/t/[token]">) {
   const { token } = await ctx.params;
-  // Scanners probing random paths never reach the database.
-  if (!TOKEN.test(token)) return new Response("Not found", { status: 404 });
+  // A link no sticker holds lands on /t, whose page says so with a 404. Scanners probing
+  // random paths never reach the database.
+  const unknown = () => Response.redirect(new URL("/t", request.url), 303);
+  if (!TOKEN.test(token)) return unknown();
 
   const hash = createHash("sha256").update(token).digest("hex");
   const { data } = await supabaseAdmin.rpc("tap", { hash }).maybeSingle().throwOnError();
-  if (!data) return new Response("Unknown sticker", { status: 404 });
+  if (!data) return unknown();
   // No habit, or an archived one: nothing was logged, and the sticker's page asks which habit.
   if (data.log_id === null) return Response.redirect(new URL(`/stickers/${data.sticker_id}`, request.url), 303);
 

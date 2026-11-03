@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { cache } from "react";
 import { osloDay } from "@/lib/habits";
+import { loginPath } from "@/lib/login";
 import { createClient } from "@/lib/supabase/server";
 import { moveSticker, newLink, removeSticker, renameSticker, setArchived } from "../../actions";
 import { toStickerView } from "../../detail-view";
@@ -28,7 +29,7 @@ export async function generateMetadata({ params }: PageProps<"/stickers/[id]">):
 export default async function Sticker({ params }: PageProps<"/stickers/[id]">) {
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getClaims();
-  if (!auth) redirect("/login");
+  if (!auth) redirect(loginPath(`/stickers/${(await params).id}`));
 
   const id = Number((await params).id);
   if (!Number.isSafeInteger(id)) notFound();

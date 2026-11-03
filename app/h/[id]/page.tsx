@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { addDays, osloDay, osloTime } from "@/lib/habits";
+import { loginPath } from "@/lib/login";
 import { createClient } from "@/lib/supabase/server";
 import { addLog, addSticker, removeLog, setArchived } from "../../actions";
 import { pickDay, toDetailView } from "../../detail-view";
@@ -16,7 +17,8 @@ export async function generateMetadata({ params }: PageProps<"/h/[id]">): Promis
 export default async function HabitPage({ params, searchParams }: PageProps<"/h/[id]">) {
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getClaims();
-  if (!auth) redirect("/login");
+  const { day: asked } = await searchParams;
+  if (!auth) redirect(loginPath(`/h/${(await params).id}${typeof asked === "string" ? `?day=${encodeURIComponent(asked)}` : ""}`));
 
   const id = Number((await params).id);
   if (!Number.isSafeInteger(id)) notFound();
@@ -24,7 +26,7 @@ export default async function HabitPage({ params, searchParams }: PageProps<"/h/
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const today = osloDay(now);
-  const day = pickDay((await searchParams).day, today);
+  const day = pickDay(asked, today);
 
   // Postgres reads "<day> 00:00 Europe/Oslo" as that Oslo midnight, DST included.
   const [habit, { data: recent }, { data: taps }] = await Promise.all([

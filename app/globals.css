@@ -163,7 +163,7 @@
     line-height: var(--text-meta--line-height);
     font-weight: 500;
   }
-  .masthead a {
+  .masthead > :first-child {
     padding-block: 0.5rem;
     font-weight: 700;
     letter-spacing: -0.01em;
@@ -249,7 +249,9 @@
   .detail,
   .editor,
   .sticker-page,
-  .pick__habit {
+  .pick__habit,
+  .logged,
+  .strip__slot {
     --trace: light-dark(color-mix(in oklab, var(--habit) 80%, black), var(--habit));
     --glint: color-mix(in oklab, var(--habit) 45%, white);
   }
@@ -742,7 +744,7 @@
       opacity: 0.5;
       scale: 1.12;
     }
-    .coil:hover .coil__turn[data-next] {
+    .coil:not(.coil--still):hover .coil__turn[data-next] {
       visibility: visible;
       stroke: var(--tone);
       stroke-width: var(--w);
@@ -843,6 +845,19 @@
         calc(100% - 36px) 2px,
         auto;
     }
+  }
+  /* The thumb's button: full width and a finger tall, the trace lower to match. Before the
+     editor's rules, so its desktop Save can go back to its own width. */
+  .button--wide {
+    width: 100%;
+    height: 56px;
+    border-radius: 12px;
+    background-position: left 18px bottom 14px;
+    font-size: var(--text-body);
+  }
+  .button:disabled {
+    cursor: progress;
+    opacity: 0.6;
   }
 
   /* Under the habits: a new one, and the archived ones by name. */
@@ -1268,14 +1283,6 @@
   }
   .editor__save {
     grid-column: 1 / -1;
-    width: 100%;
-    height: 56px;
-    border-radius: 12px;
-    font-size: var(--text-body);
-  }
-  .editor__save:disabled {
-    cursor: progress;
-    opacity: 0.6;
   }
   .editor__more {
     display: flex;
@@ -2057,6 +2064,315 @@
     }
   }
 
+  /* The 404s: a still coil and a few lines. On phones the coil takes half the row
+     above them; on desktop the pair sits apart, coil on columns 2 to 5, text on 7 to 11. */
+  .pair {
+    padding-block: 24px 48px;
+  }
+  .pair__coil {
+    width: calc(50% - var(--gutter) / 2);
+  }
+  .pair__text .title {
+    padding-bottom: 0;
+  }
+  .pair__body {
+    margin-top: 12px;
+    max-width: 34rem;
+    color: var(--color-muted);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    text-wrap: pretty;
+  }
+  .pair__more {
+    margin-top: 16px;
+    font-weight: 600;
+  }
+  .pair__more a {
+    display: inline-block;
+    padding-block: 0.7rem;
+  }
+  @media (width >= 68.75rem) {
+    .pair {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: var(--gutter);
+      align-items: center;
+      padding-block: clamp(40px, 9vh, 112px) 64px;
+    }
+    .pair__coil {
+      grid-column: 2 / 6;
+      width: auto;
+    }
+    .pair__text {
+      grid-column: 7 / 12;
+    }
+    .pair__text .title {
+      margin-top: 0;
+    }
+  }
+
+  /* Sign-in: the code as a strip of eight stickers on their liner, each digit wound as a coil
+     with that many turns, lit in the habit palette in its order. */
+  .login {
+    padding-block: 4px 48px;
+  }
+  .login__form {
+    display: grid;
+    gap: 12px;
+  }
+  .login__note {
+    max-width: 34rem;
+    color: var(--color-muted);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    text-wrap: pretty;
+  }
+  .login__controls {
+    display: grid;
+    gap: 12px;
+    max-width: 26rem;
+    margin-top: 8px;
+  }
+  .login__input {
+    height: 56px;
+    min-width: 0;
+    padding-inline: 16px;
+    border: 1px solid var(--color-etch);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--color-ink);
+    font-size: max(1rem, var(--text-body));
+    font-weight: 600;
+  }
+  .login__input::placeholder {
+    color: var(--color-muted);
+    font-weight: 500;
+    opacity: 1;
+  }
+  .login__error {
+    min-height: 1lh;
+    color: var(--color-short);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: 500;
+  }
+  .login__other {
+    justify-self: start;
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+  }
+
+  .strip {
+    position: relative;
+    margin-block: 8px 4px;
+  }
+  .strip__slots {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px var(--gutter);
+  }
+  .strip__slot {
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+  }
+  /* A digit never winds past its edge, so the spill room goes and the sticker fills its slot. */
+  .strip__slot .coil__svg {
+    scale: 1.3;
+  }
+  .strip__digit {
+    min-height: 1lh;
+    font-size: var(--text-name);
+    line-height: var(--text-name--line-height);
+    font-weight: var(--text-name--font-weight);
+    font-variant-numeric: tabular-nums;
+  }
+  /* An empty slot is a dashed die-cut edge with nothing in it; a digit closes the dashes. */
+  .strip__slot .coil__edge {
+    stroke-dasharray: 7.7 0;
+    transition:
+      stroke 0.35s var(--ease-soft),
+      stroke-width 0.35s var(--ease-soft),
+      stroke-dasharray 0.7s var(--ease-out);
+  }
+  .strip__slot:not([data-filled]) .coil__edge {
+    stroke: var(--color-etch);
+    stroke-width: 0.9;
+    stroke-dasharray: 4.5 3.2;
+  }
+  .strip__slot:not([data-filled]) .coil__chip {
+    visibility: hidden;
+  }
+  /* The caret: where the next digit goes, its edge drawn in ink. */
+  .strip:focus-within .strip__slot[data-next] .coil__edge {
+    stroke: var(--color-ink);
+    stroke-width: 1.6;
+  }
+  /* One real field over the strip, so paste, the code from Mail and screen readers all work;
+     its own text and caret are hidden, since the stickers draw the code. */
+  .strip__input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    caret-color: transparent;
+    font-size: 16px;
+    cursor: text;
+  }
+  .strip__input:focus-visible {
+    outline: none;
+  }
+  .strip__input::selection {
+    background: transparent;
+  }
+  @media (width >= 48rem) {
+    .strip__slots {
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+    }
+  }
+  @media (width >= 68.75rem) {
+    /* A poster: the strip across the sheet, centred in the window. */
+    .login {
+      display: grid;
+      align-content: center;
+      min-height: calc(100dvh - 3rem);
+      padding-block: 32px 64px;
+    }
+    .login .title {
+      margin-top: 0;
+      padding-bottom: 28px;
+    }
+    /* The strip's eight columns, so the note sits under stickers 1 to 4 and the controls under 6 to 8. */
+    .login__form {
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      column-gap: var(--gutter);
+      row-gap: 36px;
+    }
+    .strip {
+      grid-column: 1 / -1;
+      grid-row: 1;
+      margin: 0;
+    }
+    .login__note {
+      grid-column: 1 / 5;
+      grid-row: 2;
+    }
+    .login__controls {
+      grid-column: 6 / 9;
+      grid-row: 2;
+      max-width: none;
+      margin: 0;
+    }
+  }
+
+  /* /logged: what the tap did, then Undo at the bottom where the thumb is. */
+  .logged__main {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    padding-block: 24px max(24px, env(safe-area-inset-bottom));
+  }
+  .logged__meta {
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: 500;
+  }
+  .logged__head .title {
+    margin-top: 6px;
+    padding-bottom: 0;
+  }
+  .logged__coil {
+    width: 200px;
+    margin-top: 24px;
+  }
+  .logged__tally {
+    margin-top: 28px;
+  }
+  .logged__tally .count {
+    margin-top: 8px;
+  }
+  .logged__tally .pair__body {
+    margin-top: 0;
+  }
+  .logged__line {
+    margin-top: 18px;
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+    font-weight: 500;
+  }
+  .logged__line + .logged__line {
+    margin-top: 2px;
+  }
+  .logged__undo {
+    margin-top: auto;
+    padding-top: 40px;
+  }
+  .logged__note {
+    min-height: 1lh;
+    margin-top: 12px;
+    text-align: center;
+    color: var(--color-muted);
+    font-size: var(--text-meta);
+    line-height: var(--text-meta--line-height);
+  }
+  @media (width >= 68.75rem) {
+    .logged__main {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      grid-template-rows: auto auto auto 1fr;
+      column-gap: var(--gutter);
+      min-height: 0;
+      padding-block: clamp(40px, 9vh, 112px) 64px;
+    }
+    .logged__main > * {
+      grid-column: 7 / 12;
+    }
+    .logged__coil {
+      grid-column: 2 / 6;
+      grid-row: 1 / -1;
+      width: auto;
+      margin-top: 0;
+    }
+    .logged .count {
+      font-size: var(--text-fact);
+      line-height: var(--text-fact--line-height);
+      letter-spacing: var(--text-fact--letter-spacing);
+    }
+    .logged__undo {
+      max-width: 22rem;
+      margin-top: 0;
+      padding-top: 32px;
+    }
+  }
+
+  /* /logged: the tap's turn draws in once, from its jog round to its end. */
+  .coil__turn[data-fresh] {
+    stroke-dasharray: 1 1;
+    animation: draw-in 0.6s var(--ease-out) both;
+  }
+  @keyframes draw-in {
+    from {
+      stroke-dashoffset: 1;
+    }
+  }
+  /* The 404s' coil: the outer turn breaks on its right side and never closes. */
+  .coil__turn[data-gap] {
+    stroke-dasharray: 0.45 0.12 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .coil__turn[data-fresh] {
+      animation: none;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .trace,
     .coil__svg,
@@ -2072,7 +2388,8 @@
     .editor .coil__edge,
     .editor .coil__chip,
     .editor .coil__lead,
-    .editor .coil__bridge {
+    .editor .coil__bridge,
+    .strip__slot .coil__edge {
       transition: none;
     }
   }
