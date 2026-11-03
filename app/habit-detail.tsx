@@ -11,6 +11,7 @@ import { CoilButton } from "./coil-button";
 import { PageTurn } from "./page-turn";
 import { CellKey, toCells, toWeeks, WeekKey, type Cell, type WeekCell } from "./day-cells";
 import { NextFrom } from "./next-from";
+import { Refresh } from "./refresh";
 import { WEEKS, type DetailView, type Tap } from "./detail-view";
 import { Stickers } from "./stickers";
 import { UNDO_S, useTally, type Add, type Remove } from "./use-tally";
@@ -78,6 +79,7 @@ export function HabitDetail({
 
   return (
     <PageTurn>
+      <Refresh />
       <div ref={root} className="page detail" style={{ "--habit": view.color } as CSSProperties}>
         <header className="masthead">
           <Link
