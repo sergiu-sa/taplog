@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { osloDay } from "@/lib/habits";
+import { loginPath } from "@/lib/login";
 import { createClient } from "@/lib/supabase/server";
 import { deleteHabit, saveHabit, setArchived } from "../../../actions";
 import { toEditorView } from "../../../detail-view";
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: PageProps<"/h/[id]/edit">): P
 export default async function EditHabit({ params }: PageProps<"/h/[id]/edit">) {
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getClaims();
-  if (!auth) redirect("/login");
+  if (!auth) redirect(loginPath(`/h/${(await params).id}/edit`));
 
   const id = Number((await params).id);
   if (!Number.isSafeInteger(id)) notFound();
