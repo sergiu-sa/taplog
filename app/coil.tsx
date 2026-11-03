@@ -3,7 +3,22 @@ import { coil } from "@/lib/coil";
 import type { Kind } from "@/lib/habits";
 
 // Static SVG of a habit's coil. No hooks, so a Server Component can render it too.
-export function Coil({ kind, target, count, ref }: { kind: Kind; target: number; count: number; ref?: Ref<SVGSVGElement> }) {
+// `fresh` marks the newest lit turn for a CSS entrance; `broken` opens a gap in the outer turn.
+export function Coil({
+  kind,
+  target,
+  count,
+  fresh,
+  broken,
+  ref,
+}: {
+  kind: Kind;
+  target: number;
+  count: number;
+  fresh?: boolean;
+  broken?: boolean;
+  ref?: Ref<SVGSVGElement>;
+}) {
   const c = coil(kind, target, count);
   return (
     <svg
@@ -26,6 +41,9 @@ export function Coil({ kind, target, count, ref }: { kind: Kind; target: number;
           data-lit={t.lit || undefined}
           data-spill={t.spill || undefined}
           data-next={i === count || undefined}
+          // Past the spill room the newest tap has no turn of its own; the outermost drawn one stands in.
+          data-fresh={(fresh && i === Math.min(count, c.turns.length) - 1) || undefined}
+          data-gap={(broken && i === target - 1) || undefined}
           data-heavy={(c.heavy && i === c.turns.length - 1) || undefined}
         />
       ))}
