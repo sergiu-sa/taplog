@@ -815,44 +815,48 @@
     }
   }
 
-  /* Ink text button: a ground-coloured trace runs along its inner bottom edge. */
+  /* Ink text button. Hovered or focused, the ground rises from its bottom edge and the text turns
+     ink, so it inverts inside an ink edge that keeps its shape; a busy one stays as it is. */
   .button {
     min-width: 5.5rem;
     height: 44px;
     padding-inline: 18px;
     border-radius: 10px;
     background:
-      linear-gradient(var(--color-ground) 0 0) left 18px bottom 9px / 0 2px no-repeat,
+      linear-gradient(var(--color-ground) 0 0) left bottom / 100% 0 no-repeat,
       var(--color-ink);
+    box-shadow: inset 0 0 0 1.5px var(--color-ink);
     color: var(--color-ground);
     font-weight: 650;
     cursor: pointer;
     transition:
       background-size 0.45s var(--ease-out),
+      color 0.45s var(--ease-out),
       scale 0.15s var(--ease-soft);
   }
-  .button:focus-visible {
+  .button:not(:disabled, [aria-disabled]):focus-visible {
     background-size:
-      calc(100% - 36px) 2px,
+      100% 100%,
       auto;
+    color: var(--color-ink);
   }
   .button:active {
     scale: 0.97;
   }
   @media (hover: hover) {
-    .button:hover {
+    .button:not(:disabled, [aria-disabled]):hover {
       background-size:
-        calc(100% - 36px) 2px,
+        100% 100%,
         auto;
+      color: var(--color-ink);
     }
   }
-  /* The thumb's button: full width and a finger tall, the trace lower to match. Before the
-     editor's rules, so its desktop Save can go back to its own width. */
+  /* The thumb's button: full width and a finger tall. Before the editor's rules, so its desktop
+     Save can go back to its own width. */
   .button--wide {
     width: 100%;
     height: 56px;
     border-radius: 12px;
-    background-position: left 18px bottom 14px;
     font-size: var(--text-body);
   }
   .button:disabled {
