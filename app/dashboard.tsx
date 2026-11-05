@@ -160,6 +160,11 @@ export function Dashboard({
           )}
           <div>
             <p>Counts reset at midnight, Oslo time.{weekly && " Weekly counts start again each Monday."}</p>
+            <p>
+              <Link href="/guide" prefetch={false} className="undo">
+                How it works
+              </Link>
+            </p>
             <ThemeSwitch theme={theme} />
           </div>
         </footer>
