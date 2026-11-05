@@ -251,7 +251,9 @@
   .sticker-page,
   .pick__habit,
   .logged,
-  .strip__slot {
+  .strip__slot,
+  .guide__hc,
+  .guide__mark {
     --trace: light-dark(color-mix(in oklab, var(--habit) 80%, black), var(--habit));
     --glint: color-mix(in oklab, var(--habit) 45%, white);
   }
@@ -2486,11 +2488,6 @@
 /* /guide: a film of the whole flow, then every step as a still. Line art takes its colour by
    role (g-e etch, g-i ink, g-m muted, g-t the habit's trace, g-f* fills), so themes just work. */
 @layer components {
-  .guide__hc,
-  .guide__mark {
-    --trace: light-dark(color-mix(in oklab, var(--habit) 80%, black), var(--habit));
-    --glint: color-mix(in oklab, var(--habit) 45%, white);
-  }
   .guide .masthead {
     font-size: var(--text-name);
   }
@@ -2570,7 +2567,8 @@
   /* The film's chapters: a bar each that fills as it plays, like a phone's stories. */
   .guide__chapters {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
     gap: 4px;
   }
   .guide__chapters button {
@@ -2617,6 +2615,7 @@
     display: block;
     height: 100%;
     background: var(--color-ink);
+    transform: scaleX(0);
     transform-origin: left;
   }
   @media (hover: hover) {
@@ -2663,41 +2662,16 @@
     min-height: 64px;
     margin-top: 4px;
   }
-  /* The ink button's treatment: hovered or focused, it inverts from the bottom edge up. */
+  /* The ink button (its hover and press come from .button), square and a finger wide. */
   .guide__play {
     flex: none;
     display: grid;
     place-items: center;
+    min-width: 0;
     width: 52px;
     height: 52px;
+    padding: 0;
     border-radius: 12px;
-    background:
-      linear-gradient(var(--color-ground) 0 0) left bottom / 100% 0 no-repeat,
-      var(--color-ink);
-    box-shadow: inset 0 0 0 1.5px var(--color-ink);
-    color: var(--color-ground);
-    cursor: pointer;
-    transition:
-      background-size 0.45s var(--ease-out),
-      color 0.45s var(--ease-out),
-      scale 0.15s var(--ease-soft);
-  }
-  .guide__play:focus-visible {
-    background-size:
-      100% 100%,
-      auto;
-    color: var(--color-ink);
-  }
-  @media (hover: hover) {
-    .guide__play:hover {
-      background-size:
-        100% 100%,
-        auto;
-      color: var(--color-ink);
-    }
-  }
-  .guide__play:active {
-    scale: 0.97;
   }
   .guide__play svg {
     width: 20px;

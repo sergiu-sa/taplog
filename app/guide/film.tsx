@@ -3,8 +3,8 @@
 import { useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { ease, gsap, reducedMotion } from "@/lib/motion";
 import { PALETTE } from "@/lib/palette";
-import { CAP } from "./copy";
-import { Bar, Box, Btn, Fields, Hair, hue, Mark } from "./parts";
+import { CAP, SECTIONS } from "./copy";
+import { Bar, BLUE, Box, Btn, Fields, Hair, hue, Mark } from "./parts";
 
 // The guide's film: one stage (a sticker sheet, a water bottle, a phone) and one GSAP timeline
 // whose chapters are the sections below. The server draws the frame at POSTER, so the page reads
@@ -12,8 +12,14 @@ import { Bar, Box, Btn, Fields, Hair, hue, Mark } from "./parts";
 
 const GREEN = hue("Green");
 const TEAL = hue("Teal");
-const CHAPTERS = ["Stickers", "Where", "Write", "Tap", "By hand", "Goal or limit", "Home Screen"];
+const CHAPTERS = SECTIONS.map((s) => s.title);
+// A scene's chapter is the section its step sits in, so the film and the stills can't disagree.
+const chapterOf = (key: string) => SECTIONS.find((s) => [...s.steps, s.warn].some((step) => step?.key === key))!.title;
+const POSTER = "tLogged"; // Tap: the coil has wound from 5 to 6 on the Logged page
+const OPEN = 1.8; // the sticker sheet has drawn in and every sticker sits on it
 const f = (...names: string[]) => names.map((n) => `[data-f="${n}"]`).join(", ");
+const PARTS = ["coil__edge", "coil__lead", "coil__bridge", "coil__insulation", "coil__chip"];
+const parts = (n: string) => PARTS.map((c) => `${f(n)} .${c}`).join(", ");
 
 const Layer = ({ f, poster, children }: { f: string; poster?: boolean; children: ReactNode }) => (
   <g data-f={f} data-poster={poster || undefined}>
@@ -387,15 +393,15 @@ const STAGE = (
   </>
 );
 
-type Scene = { chapter: string; cap: string; t: number; dur: number };
+type Scene = { key: string; chapter: string; cap: string; t: number; dur: number };
 
 // Builds the whole film on one timeline: each scene adds its tweens at its start time.
 function build(T: gsap.core.Timeline) {
   const scenes: Scene[] = [];
   let cur = 0;
   let screen: string | null = null;
-  const scene = (chapter: string, key: string, dur: number, fn: (t: number) => void) => {
-    scenes.push({ chapter, cap: CAP[key], t: cur, dur });
+  const scene = (key: string, dur: number, fn: (t: number) => void) => {
+    scenes.push({ key, chapter: chapterOf(key), cap: CAP[key], t: cur, dur });
     fn(cur);
     cur += dur;
   };
@@ -420,19 +426,18 @@ function build(T: gsap.core.Timeline) {
     T.fromTo(f(b), { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: ease.out, immediateRender: false }, t);
   };
   const fade = (t: number, sel: string, on = true, d = 0.45) => T.to(sel, { autoAlpha: on ? 1 : 0, duration: d, ease: ease.soft }, t);
-  const parts = (n: string) => ["coil__edge", "coil__lead", "coil__bridge", "coil__insulation", "coil__chip"].map((c) => `${f(n)} .${c}`).join(", ");
 
-  scene("Stickers", "ntag", 3.2, (t) => {
+  scene("ntag", 3.2, (t) => {
     draw(t, f("sheetEdge"), 1);
     fade(t + 0.5, f("sep"));
     T.fromTo(f("slot", "hero"), { autoAlpha: 0, scale: 0.8 }, { autoAlpha: 1, scale: 1, duration: 0.6, stagger: 0.14, ease: ease.out, immediateRender: false }, t + 0.6);
   });
-  scene("Stickers", "onelink", 3.0, (t) => {
+  scene("onelink", 3.0, (t) => {
     T.to(f("sheet"), { autoAlpha: 0.3, duration: 0.5, ease: ease.soft }, t);
     T.to(f("hero"), { x: 30, y: 150, scale: 1.15, duration: 0.9, ease: ease.out }, t);
     fade(t + 0.6, f("pill"), true, 0.4);
   });
-  scene("Where", "bottle", 3.2, (t) => {
+  scene("bottle", 3.2, (t) => {
     fade(t, f("sheet"), false, 0.4);
     fade(t, f("pill"), false, 0.3);
     draw(t + 0.1, f("btlP", "btlC"), 1.1);
@@ -447,30 +452,30 @@ function build(T: gsap.core.Timeline) {
     fade(t + 1.5, f(`${name}B`), true, 0.3);
     fade(t + 1.5, f(`${name}Off`), false, 0.3);
   };
-  scene("Where", "metal", 2.8, (t) => vignette(t, "metal"));
-  scene("Where", "foil", 2.8, (t) => vignette(t, "foil", "metal"));
-  scene("Write", "wAdd", 3.4, (t) => {
+  scene("metal", 2.8, (t) => vignette(t, "metal"));
+  scene("foil", 2.8, (t) => vignette(t, "foil", "metal"));
+  scene("wAdd", 3.4, (t) => {
     fade(t, f("foil"), false, 0.4);
     move(t, "left", 1);
     show(t + 0.3, "sHabit");
     press(t + 1.4, 98, 205);
   });
-  scene("Write", "wCopy", 3.0, (t) => {
+  scene("wCopy", 3.0, (t) => {
     show(t, "sPanel");
     draw(t + 0.3, `${f("mark")} .coil__turn[data-lit]`, 0.7, 0.06);
     press(t + 1.0, 58, 101);
     draw(t + 1.75, f("copied"), 0.4);
   });
-  scene("Write", "wWrite", 2.6, (t) => {
+  scene("wWrite", 2.6, (t) => {
     show(t, "sNfc");
     press(t + 0.8, 58, 16);
   });
-  scene("Write", "wRecord", 3.0, (t) => {
+  scene("wRecord", 3.0, (t) => {
     show(t, "sRecord");
     press(t + 0.6, 58, 20);
     press(t + 1.7, 58, 84);
   });
-  scene("Write", "wPaste", 4.0, (t) => {
+  scene("wPaste", 4.0, (t) => {
     show(t, "sPaste");
     press(t + 0.5, 58, 40, 0.5);
     T.fromTo(f("pill2"), { autoAlpha: 0, scale: 0.6 }, { autoAlpha: 1, scale: 1, duration: 0.4, ease: ease.out, immediateRender: false }, t + 1.4);
@@ -479,7 +484,7 @@ function build(T: gsap.core.Timeline) {
     T.to(f("typerect"), { attr: { width: 104 }, duration: 0.6, ease: ease.soft }, t + 2.6);
     press(t + 3.0, 58, 203);
   });
-  scene("Write", "wHold", 3.6, (t) => {
+  scene("wHold", 3.6, (t) => {
     show(t, "sScan");
     lift(t);
     move(t + 0.4, "tap", 1);
@@ -489,53 +494,53 @@ function build(T: gsap.core.Timeline) {
     draw(t + 1.6, `${f("heroOn")} .coil__turn[data-lit]`, 0.6, 0.1);
     fade(t + 2.2, parts("heroOn"));
   });
-  scene("Write", "wLock", 2.8, (t) => {
+  scene("wLock", 2.8, (t) => {
     move(t, "left", 0.9);
     show(t + 0.2, "sLock");
     draw(t + 1.2, f("lockX"), 0.5);
   });
-  scene("Write", "wCheck", 3.0, (t) => {
+  scene("wCheck", 3.0, (t) => {
     move(t, "tap", 0.9);
     pulse(t + 0.9);
     show(t + 1.0, "sCheck");
     draw(t + 1.5, `${f("chkT")} .coil__turn`, 0.7);
   });
-  scene("Write", "chat", 3.6, (t) => {
+  scene("chat", 3.6, (t) => {
     move(t, "left", 0.9);
     show(t + 0.3, "sChat");
     draw(t + 1.3, f("chatLink"), 0.5);
     draw(t + 1.8, `${f("chatT")} .coil__turn`, 0.7);
   });
-  scene("Tap", "tHold", 2.8, (t) => {
+  scene("tHold", 2.8, (t) => {
     show(t, "sHome");
     move(t + 0.3, "tap", 1.1);
     pulse(t + 1.4);
     pulse(t + 2.0);
   });
-  scene("Tap", "tBanner", 2.6, (t) => {
+  scene("tBanner", 2.6, (t) => {
     T.fromTo(f("banner"), { autoAlpha: 0, y: -44 }, { autoAlpha: 1, y: 0, duration: 0.6, ease: ease.out, immediateRender: false }, t + 0.1);
     press(t + 0.9, 58, 28);
   });
-  scene("Tap", "tBrowser", 2.4, (t) => {
+  scene("tBrowser", 2.4, (t) => {
     fade(t, f("banner"), false, 0.3);
     lift(t);
     show(t, "sBrowser");
     draw(t + 0.3, f("load"), 1.4);
   });
-  scene("Tap", "tLogged", 3.2, (t) => {
+  scene("tLogged", 3.2, (t) => {
     show(t, "sLogged");
     move(t + 0.2, "left", 0.9);
     draw(t + 1.1, `${f("lgT")} .coil__turn`, 0.7);
     roll(t + 1.3, "lgA", "lgB");
   });
-  scene("Tap", "tUndo", 3.4, (t) => {
+  scene("tUndo", 3.4, (t) => {
     T.fromTo(f("undoClock"), { strokeDashoffset: 0 }, { strokeDashoffset: 1.01, duration: 1.6, ease: "none", autoRound: false, immediateRender: false }, t + 0.3);
     press(t + 1.5, 58, 205);
     T.to(`${f("lgT")} .coil__turn`, { strokeDashoffset: 1.01, duration: 0.7, ease: ease.out, autoRound: false }, t + 2.2);
     roll(t + 2.2, "lgB", "lgA");
     lift(t + 2.8);
   });
-  scene("Tap", "tDup", 3.6, (t) => {
+  scene("tDup", 3.6, (t) => {
     move(t, "tap", 0.8);
     pulse(t + 0.8);
     draw(t + 1.0, `${f("lgT")} .coil__turn`, 0.6);
@@ -545,7 +550,7 @@ function build(T: gsap.core.Timeline) {
     fade(t + 2.1, f("lgMetaInk"), true, 0.2);
     move(t + 2.5, "left", 0.9);
   });
-  scene("By hand", "hHold", 3.4, (t) => {
+  scene("hHold", 3.4, (t) => {
     show(t, "sToday");
     T.to(f("touch"), { autoAlpha: 1, x: 87, y: 63, duration: 0.55, ease: ease.soft }, t + 0.5);
     T.to(f("touch"), { scale: 0.72, duration: 0.12, ease: ease.soft }, t + 1.1);
@@ -557,11 +562,11 @@ function build(T: gsap.core.Timeline) {
     T.to(f("touch"), { scale: 1, duration: 0.18, ease: ease.soft }, t + 1.6);
     lift(t + 2.1);
   });
-  scene("By hand", "hAdded", 2.6, (t) => {
+  scene("hAdded", 2.6, (t) => {
     fade(t, f("tdHint"), false, 0.3);
     fade(t + 0.2, f("tdAdded"));
   });
-  scene("Goal or limit", "goal", 3.6, (t) => {
+  scene("goal", 3.6, (t) => {
     move(t, "off", 0.8);
     fade(t, f("bottle", "hero"), false, 0.5);
     fade(t + 0.4, f("kinds"));
@@ -569,20 +574,20 @@ function build(T: gsap.core.Timeline) {
     T.fromTo(`${f("G8")} .coil__pulse`, { strokeDasharray: "0.3 1.4", strokeDashoffset: 0.3 }, { strokeDashoffset: -1, duration: 0.9, ease: ease.inOut, autoRound: false, immediateRender: false }, t + 2.2);
     fade(t + 2.6, parts("G8"), true, 0.5);
   });
-  scene("Goal or limit", "limit", 3.8, (t) => {
+  scene("limit", 3.8, (t) => {
     draw(t + 0.2, `${f("L3")} .coil__turn[data-lit]`, 0.5, 0.3);
     fade(t + 1.3, `${f("L3")} .coil__edge`, true, 0.3);
     draw(t + 1.9, `${f("L4")} .coil__turn[data-spill][data-lit]`, 0.6);
     fade(t + 2.2, `${f("L4")} .coil__edge`, true, 0.3);
   });
-  scene("Goal or limit", "week", 3.2, (t) => {
+  scene("week", 3.2, (t) => {
     // The pair sits mid-stage on its own, and makes room when the week comes in under it.
     T.to(f("pair"), { y: 0, duration: 0.8, ease: ease.inOut }, t);
     fade(t + 0.4, f("week"));
     T.fromTo(f("wkT"), { autoAlpha: 0, scale: 0.4 }, { autoAlpha: 1, scale: 1, duration: 0.4, stagger: 0.5, ease: ease.out, immediateRender: false }, t + 0.4);
     fade(t + 2.0, f("wkFill", "wkC"), true, 0.4);
   });
-  scene("Goal or limit", "spacing", 3.2, (t) => {
+  scene("spacing", 3.2, (t) => {
     fade(t, f("spacing"), true, 0.3);
     draw(t + 0.1, f("spLine"), 0.8);
     fade(t + 0.6, f("spA"), true, 0.3);
@@ -590,7 +595,7 @@ function build(T: gsap.core.Timeline) {
     draw(t + 1.4, f("spBr"), 0.7);
     fade(t + 1.9, f("spN"), true, 0.3);
   });
-  scene("Home Screen", "aShare", 3.8, (t) => {
+  scene("aShare", 3.8, (t) => {
     fade(t, f("kinds"), false, 0.4);
     fade(t + 0.3, f("bottle", "hero"), true, 0.5);
     show(t, "sShare");
@@ -599,7 +604,7 @@ function build(T: gsap.core.Timeline) {
     T.to(f("sheet2"), { y: 0, duration: 0.6, ease: ease.out }, t + 1.9);
     press(t + 2.5, 58, 160);
   });
-  scene("Home Screen", "aSignin", 4.0, (t) => {
+  scene("aSignin", 4.0, (t) => {
     lift(t);
     show(t, "sHome2");
     T.fromTo(f("appIcon"), { scale: 0, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.5, ease: ease.out, immediateRender: false }, t + 0.4);
@@ -609,13 +614,13 @@ function build(T: gsap.core.Timeline) {
     show(t + 1.9, "sSignin");
     T.to(f("slotF"), { autoAlpha: 1, duration: 0.3, stagger: 0.12, ease: ease.soft }, t + 2.4);
   });
-  scene("Home Screen", "aTap", 3.2, (t) => {
+  scene("aTap", 3.2, (t) => {
     move(t, "tap", 1);
     pulse(t + 1);
     show(t + 1.2, "sBrowser");
     draw(t + 1.4, f("load"), 1);
   });
-  scene("Home Screen", "aBack", 3.8, (t) => {
+  scene("aBack", 3.8, (t) => {
     move(t, "left", 0.9);
     show(t + 0.2, "sSwitch");
     T.to(f("cardWeb"), { x: -150, duration: 0.8, ease: ease.inOut }, t + 1.2);
@@ -641,7 +646,7 @@ function opening() {
       f("banner", "touch", "ripple", "lgB", "tdB", "tdAdded", "lgMetaInk", "pill", "sep", "slot", "hero", "metal", "foil", "metalB", "foilB", "metalR", "foilR", "kinds", "week", "spacing", "wkFill", "wkC", "wkT", "spA", "spB", "spN", "appIcon", "slotF", "pill2", "tdRing", "heroRings"),
     { autoAlpha: 0 },
   );
-  gsap.set(["G8", "L3", "L4", "heroOn"].flatMap((n) => ["coil__edge", "coil__lead", "coil__bridge", "coil__insulation", "coil__chip"].map((c) => `${f(n)} .${c}`)).join(", ") + `, ${f("L4")} .coil__turn:not([data-spill])`, { autoAlpha: 0 });
+  gsap.set(["G8", "L3", "L4", "heroOn"].map(parts).join(", ") + `, ${f("L4")} .coil__turn:not([data-spill])`, { autoAlpha: 0 });
   gsap.set(f("hero", "heroRings", "touch", "tdRing", "appIcon", "pill2", "cardApp", "cardWeb", "metalR", "foilR", "phone", "wkT", "scanR"), { transformOrigin: "50% 50%" });
   gsap.set(f("hero"), { x: 104, y: 120, scale: 1 });
   gsap.set(f("sheet2"), { y: 140 });
@@ -650,9 +655,6 @@ function opening() {
   gsap.set(f("cardApp"), { x: 42, scale: 0.62 });
   gsap.set(f("phone"), { x: 40, y: 440, rotation: 0, scale: 1 });
 }
-
-const POSTER_SCENE = 17; // Tap: the coil has wound from 5 to 6 on the Logged page
-const OPEN = 1.8; // the sticker sheet has drawn in and every sticker sits on it
 
 export function Film() {
   const root = useRef<HTMLDivElement>(null);
@@ -665,11 +667,16 @@ export function Film() {
     const cap = el.querySelector(".guide__cap")!;
     const name = el.querySelector(".guide__now")!;
     const bars = [...el.querySelectorAll<HTMLButtonElement>("[data-ch]")];
+    const fills = bars.map((b) => b.querySelector<HTMLElement>(".guide__fill")!);
     const stage = el.querySelector(".guide__stage")!;
     let io: IntersectionObserver | undefined;
     let held = false;
     let begun = false;
+    let onScreen = false;
     let prologue: gsap.core.Timeline | null = null;
+    let fade: gsap.core.Tween | null = null;
+    // What the DOM last got, so a frame of play rewrites only what changed.
+    const shown = { chapter: "", current: -1, state: "" };
 
     // Live before the timeline reads anything: GSAP takes a part the poster CSS still hides as
     // starting at 0, and seeking back would then hide it.
@@ -698,17 +705,27 @@ export function Film() {
         }
         // The opening shows the film's payoff before the film starts, so no chapter is under way.
         const opening = !begun && !RM;
-        name.textContent = opening ? "" : c.chapter;
-        chapters.forEach((c, i) => {
-          const p = opening ? 0 : Math.max(0, Math.min(1, (t - c.t) / (c.end - c.t)));
-          bars[i].querySelector<HTMLElement>(".guide__fill")!.style.transform = `scaleX(${p})`;
-          if (!opening && CHAPTERS[i] === s.chapter) bars[i].setAttribute("aria-current", "step");
-          else bars[i].removeAttribute("aria-current");
+        const chapter = opening ? "" : c.chapter;
+        if (chapter !== shown.chapter) {
+          name.textContent = chapter;
+          shown.chapter = chapter;
+        }
+        chapters.forEach((ch, i) => {
+          const p = opening ? 0 : Math.max(0, Math.min(1, (t - ch.t) / (ch.end - ch.t)));
+          fills[i].style.transform = `scaleX(${p})`;
         });
-        const playing = prologue ? !prologue.paused() : !T.paused();
+        const current = opening ? -1 : CHAPTERS.indexOf(s.chapter);
+        if (current !== shown.current) {
+          bars.forEach((b, i) => (i === current ? b.setAttribute("aria-current", "step") : b.removeAttribute("aria-current")));
+          shown.current = current;
+        }
+        const playing = fade ? !held : prologue ? !prologue.paused() : !T.paused();
         const state = playing ? "pause" : done() ? "again" : "play";
-        play.dataset.state = state;
-        play.setAttribute("aria-label", { again: "Play again", play: "Play", pause: "Pause" }[state]);
+        if (state !== shown.state) {
+          play.dataset.state = state;
+          play.setAttribute("aria-label", { again: "Play again", play: "Play", pause: "Pause" }[state]);
+          shown.state = state;
+        }
       };
       T.eventCallback("onUpdate", ui);
       T.eventCallback("onComplete", () => {
@@ -716,31 +733,50 @@ export function Film() {
         ui();
       });
 
-      // The film proper fades in on the finished sticker sheet, so the stage never sits empty.
+      // The film proper fades in on the finished sticker sheet, so the stage never sits empty. It
+      // plays on only if nothing paused it or took it off screen while it faded.
       const intoFilm = () => {
         prologue?.kill();
         prologue = null;
         begun = true;
-        gsap.to(stage, { autoAlpha: 0, duration: 0.3, ease: ease.soft, onComplete: () => void (T.seek(OPEN).play(), gsap.to(stage, { autoAlpha: 1, duration: 0.3, ease: ease.soft })) });
+        fade = gsap.to(stage, {
+          autoAlpha: 0,
+          duration: 0.3,
+          ease: ease.soft,
+          onComplete: () => {
+            fade = null;
+            T.seek(OPEN);
+            if (!held && onScreen) T.play();
+            gsap.to(stage, { autoAlpha: 1, duration: 0.3, ease: ease.soft });
+            ui();
+          },
+        });
+        ui();
       };
 
       api.current = {
         toggle() {
-          held = !(prologue ? prologue.paused() : T.paused());
-          if (prologue) prologue.paused(held);
-          else if (held) T.pause();
-          else if (!begun) intoFilm();
-          else if (done()) T.restart();
-          else T.play();
+          if (fade) held = !held;
+          else {
+            held = !(prologue ? prologue.paused() : T.paused());
+            if (prologue) prologue.paused(held);
+            else if (held) T.pause();
+            else if (!begun) intoFilm();
+            else if (done()) T.restart();
+            else T.play();
+          }
           ui();
         },
-        // Under reduced motion a chapter shows its last frame, still.
+        // Under reduced motion a chapter shows its last frame, still. Otherwise a pick wins over
+        // the opening and over its fade, whichever is under way.
         chapter(i) {
           if (RM) T.pause().seek(chapters[i].end - 0.01);
           else {
             prologue?.kill();
             prologue = null;
+            fade = null;
             begun = true;
+            gsap.killTweensOf(stage);
             gsap.set(stage, { autoAlpha: 1 });
             T.seek(chapters[i].t);
             if (!held) T.play();
@@ -749,17 +785,19 @@ export function Film() {
         },
       };
 
-      const poster = scenes[POSTER_SCENE];
+      const poster = scenes.find((s) => s.key === POSTER)!;
       T.seek(poster.t + poster.dur - 0.01);
       if (RM) play.hidden = true;
       else {
         // First on screen, the server's frame plays its own moment (the coil winds from 5 to 6),
         // so the idea comes first; then the film starts from the stickers. It pauses off screen.
         io = new IntersectionObserver(([e]) => {
-          if (!e.isIntersecting) {
+          onScreen = e.isIntersecting;
+          if (!onScreen) {
             prologue?.pause();
             T.pause();
-          } else if (!held) {
+          } else if (!held && !fade) {
+            // Not during the fade: its own end starts the film.
             if (prologue) prologue.resume();
             else if (begun) {
               if (!done()) T.play();
@@ -792,28 +830,33 @@ export function Film() {
 
   return (
     <div ref={root} className="guide__player">
-      {/* The bars carry each chapter's name for screen readers; this shows the current one. */}
-      <p className="guide__now" aria-hidden="true">
-        Tap
-      </p>
+      {/* The bars carry each chapter's name for screen readers; this shows the current one. The
+          server's frame opens the film, so no chapter is named or under way until it starts. */}
+      <p className="guide__now" aria-hidden="true" />
       <ol className="guide__chapters" aria-label="Chapters">
         {CHAPTERS.map((c, i) => (
           <li key={c}>
-            <button type="button" data-ch={i} aria-label={c} aria-current={c === "Tap" ? "step" : undefined} onClick={() => api.current?.chapter(i)}>
+            <button type="button" data-ch={i} aria-label={c} onClick={() => api.current?.chapter(i)}>
               <span className="guide__bar">
-                <span className="guide__fill" style={{ transform: `scaleX(${i < 3 ? 1 : i === 3 ? 0.6 : 0})` }} />
+                <span className="guide__fill" />
               </span>
             </button>
           </li>
         ))}
       </ol>
       <div className="guide__stagebox">
-        <svg className="guide__stage guide__hc" viewBox="0 30 360 360" role="img" aria-label="A short film of the steps listed below, from buying stickers to adding taplog to the Home Screen.">
+        <svg
+          className="guide__stage guide__hc"
+          viewBox="0 30 360 360"
+          role="img"
+          aria-label="A short film of the steps listed below, from buying stickers to adding taplog to the Home Screen."
+          style={{ "--habit": BLUE } as CSSProperties}
+        >
           {STAGE}
         </svg>
       </div>
       <div className="guide__sub">
-        <button type="button" className="guide__play" data-state="play" aria-label="Play" onClick={() => api.current?.toggle()}>
+        <button type="button" className="button guide__play" data-state="play" aria-label="Play" onClick={() => api.current?.toggle()}>
           <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
             <path className="guide__ic-play" d="M6 4l10 6-10 6z" fill="currentColor" />
             <g className="guide__ic-pause" fill="currentColor">
@@ -824,7 +867,7 @@ export function Film() {
           </svg>
         </button>
         <p className="guide__caption">
-          <span className="guide__cap">{CAP.tLogged}</span>
+          <span className="guide__cap">{CAP[POSTER]}</span>
         </p>
       </div>
     </div>
@@ -832,7 +875,9 @@ export function Film() {
 }
 
 // The steps below the film draw their lines in once as they come on screen, a trace running along
-// each one. Coils and fills just appear: they carry no line to run along.
+// each one. Coils, fills and dashed lines just appear: they carry no line to run along.
+const LINES = ":is(.g-e, .g-i, .g-m, .g-t, .g-gs):not(.coil__svg *, [stroke-dasharray])";
+
 export function DrawIn() {
   useEffect(() => {
     if (reducedMotion()) return;
@@ -840,7 +885,7 @@ export function DrawIn() {
       for (const e of entries) {
         if (!e.isIntersecting) continue;
         io.unobserve(e.target);
-        const lines = [...e.target.querySelectorAll<SVGGeometryElement>("path, rect, circle")].filter((l) => !l.closest(".coil__svg") && !l.hasAttribute("stroke-dasharray"));
+        const lines = [...e.target.querySelectorAll<SVGGeometryElement>(LINES)];
         lines.forEach((l) => {
           const len = l.getTotalLength();
           gsap.fromTo(l, { strokeDasharray: len, strokeDashoffset: len }, { strokeDashoffset: 0, duration: 0.9, ease: ease.out, clearProps: "strokeDasharray,strokeDashoffset" });
