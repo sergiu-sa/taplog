@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect, RedirectType } from "next/navigation";
 import { safeNext } from "@/lib/login";
 import { createClient } from "@/lib/supabase/server";
@@ -43,6 +44,11 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       </header>
       <main id="main" tabIndex={-1} className="login">
         <LoginForm action={login} next={next} />
+        <p className="login__guide">
+          <Link href="/guide" className="undo">
+            How it works
+          </Link>
+        </p>
       </main>
     </div>
   );
