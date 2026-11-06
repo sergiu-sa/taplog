@@ -42,6 +42,20 @@ export async function previewDone(): Promise<string | void> {
   console.log("preview archive, restore or delete");
 }
 
+// The preview has no session to end; it stays on the page.
+export async function previewSignOut() {
+  if (process.env.DESIGN_PREVIEW !== "1") return;
+  await pause();
+  console.log("preview sign out");
+}
+
+export async function previewSignOutEverywhere(): Promise<string | null> {
+  if (process.env.DESIGN_PREVIEW !== "1") return null;
+  await pause();
+  console.log("preview sign out everywhere");
+  return null;
+}
+
 // A made-up token in the real shape; no sticker anywhere has its hash, so it logs nothing.
 export async function previewToken(label?: string): Promise<Made> {
   if (process.env.DESIGN_PREVIEW !== "1") return { error: "Preview only." };
