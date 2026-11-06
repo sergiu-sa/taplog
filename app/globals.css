@@ -245,6 +245,24 @@
     }
   }
 
+  /* Sign out's row, and the ask before signing out everywhere, in the footer's small print. */
+  .sign-out {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 28px;
+    min-height: 44px;
+  }
+  .sign-out__ask {
+    display: grid;
+    gap: 2px;
+    padding-top: 6px;
+  }
+  .sign-out__ask > p:first-child,
+  .sign-out__ask .sign-out__yes {
+    color: var(--color-ink);
+  }
+
   .habit,
   .detail,
   .editor,
