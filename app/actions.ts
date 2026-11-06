@@ -1,7 +1,8 @@
 "use server";
 
+import { isAuthApiError, isAuthSessionMissingError } from "@supabase/supabase-js";
 import { refresh, revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect, RedirectType } from "next/navigation";
 import { MAX_TARGET, minTarget, SPACINGS } from "@/lib/habits";
 import { PALETTE } from "@/lib/palette";
@@ -179,6 +180,37 @@ export async function removeSticker(id: number): Promise<string | void> {
   if (error) return "Didn't save. Try again.";
   if (!data) return "That sticker is gone.";
   landOn(data.habit_id ? `/h/${data.habit_id}` : "/");
+}
+
+// This browser only; the home-screen app keeps its own session. With an expired token and Auth
+// out of reach, signOut() gives up before clearing anything, so then the cookies go by hand.
+export async function signOut() {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signOut({ scope: "local" });
+  if (error) {
+    const jar = await cookies();
+    for (const { name } of jar.getAll()) if (name.startsWith("sb-")) jar.delete(name);
+  }
+  redirect("/login", RedirectType.replace);
+}
+
+// "others" then "local" is what "global" does, but a refusal leaves this browser signed in to say
+// so. auth.signOut() reports a 401, 403 or 404 (this browser's own session already ended) as done;
+// admin.signOut() is the same POST /logout and passes them on. Auth checks the token there, so the
+// session is only read here: signedIn() would send a failed check to /login with nothing revoked.
+export async function signOutEverywhere(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data, error: unread } = await supabase.auth.getSession();
+  if (unread) return "Didn't sign out. Try again.";
+  if (!data.session) redirect("/login", RedirectType.replace);
+  const { error } = await supabase.auth.admin.signOut(data.session.access_token, "others");
+  // The refusals auth.signOut() swallows; a 403 session_not_found arrives as a session-missing error.
+  if (isAuthSessionMissingError(error) || (isAuthApiError(error) && [401, 403, 404].includes(error.status))) {
+    return "This browser was already signed out, so other devices weren't. Sign out, sign in again, then try again.";
+  }
+  if (error) return "Didn't sign out. Try again.";
+  await supabase.auth.signOut({ scope: "local" });
+  redirect("/login", RedirectType.replace);
 }
 
 // Every page already visited is stale after these, and Back would restore one from the client
