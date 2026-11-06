@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { osloDay } from "@/lib/habits";
 import { createClient } from "@/lib/supabase/server";
 import { readTheme } from "@/lib/theme";
-import { addLog, removeLog } from "./actions";
+import { addLog, removeLog, signOut, signOutEverywhere } from "./actions";
 import { Dashboard, splitHabits } from "./dashboard";
 
 export const metadata: Metadata = { title: "Today" };
@@ -31,5 +31,16 @@ export default async function Page() {
   const now = Date.now();
   const today = osloDay(now);
 
-  return <Dashboard today={today} {...splitHabits(habits, today, now)} loose={loose} add={addLog} remove={removeLog} theme={await readTheme()} />;
+  return (
+    <Dashboard
+      today={today}
+      {...splitHabits(habits, today, now)}
+      loose={loose}
+      add={addLog}
+      remove={removeLog}
+      signOut={signOut}
+      signOutEverywhere={signOutEverywhere}
+      theme={await readTheme()}
+    />
+  );
 }

@@ -1,7 +1,8 @@
 "use server";
 
+import { isAuthApiError, isAuthSessionMissingError } from "@supabase/supabase-js";
 import { refresh, revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect, RedirectType } from "next/navigation";
 import { MAX_TARGET, minTarget, SPACINGS } from "@/lib/habits";
 import { PALETTE } from "@/lib/palette";
@@ -179,6 +180,40 @@ export async function removeSticker(id: number): Promise<string | void> {
   if (error) return "Didn't save. Try again.";
   if (!data) return "That sticker is gone.";
   landOn(data.habit_id ? `/h/${data.habit_id}` : "/");
+}
+
+// This browser only; the home-screen app keeps its own session. With an expired token and Auth
+// out of reach, signOut() gives up before clearing anything, so then the cookies go by hand.
+export async function signOut() {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signOut({ scope: "local" });
+  if (error) await forget();
+  redirect("/login", RedirectType.replace);
+}
+
+const ALREADY = "This browser was already signed out, so other devices weren't. Sign out, sign in again, then try again.";
+
+// One POST /logout?scope=global, this session included. admin.signOut() sends it without touching
+// the cookies and passes every refusal on, where auth.signOut() clears them either way and reports
+// a 401, 403 or 404 (this browser's session already ended) as done. So any failure leaves this
+// browser signed in to say so. Auth checks the token itself, so the session is only read here.
+export async function signOutEverywhere(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data, error: unread } = await supabase.auth.getSession();
+  if (unread) return "Didn't sign out. Try again.";
+  if (!data.session) return ALREADY;
+  const { error } = await supabase.auth.admin.signOut(data.session.access_token, "global");
+  // A 403 session_not_found arrives as a session-missing error, not an API error.
+  if (isAuthSessionMissingError(error) || (isAuthApiError(error) && [401, 403, 404].includes(error.status))) return ALREADY;
+  if (error) return "Didn't sign out. Try again.";
+  await forget();
+  redirect("/login", RedirectType.replace);
+}
+
+// Every Supabase cookie is named sb-<project>-auth-token…; theme is the app's only other one.
+async function forget() {
+  const jar = await cookies();
+  for (const { name } of jar.getAll()) if (name.startsWith("sb-")) jar.delete(name);
 }
 
 // Every page already visited is stale after these, and Back would restore one from the client

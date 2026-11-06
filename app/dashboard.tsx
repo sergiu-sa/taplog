@@ -7,6 +7,7 @@ import type { Theme } from "@/lib/theme";
 import { HabitRow, type HabitView } from "./habit-row";
 import { PageTurn } from "./page-turn";
 import { Refresh } from "./refresh";
+import { SignOut, type SignOutEverywhere, type SignOutLocal } from "./sign-out";
 import { ThemeSwitch } from "./theme-switch";
 import type { Add, Remove } from "./use-tally";
 
@@ -78,6 +79,8 @@ export function Dashboard({
   newHref = "/habits/new",
   add,
   remove,
+  signOut,
+  signOutEverywhere,
   theme,
 }: {
   today: string;
@@ -89,6 +92,8 @@ export function Dashboard({
   newHref?: string;
   add: Add;
   remove: Remove;
+  signOut: SignOutLocal;
+  signOutEverywhere: SignOutEverywhere;
   theme?: Theme;
 }) {
   const cols = sheetCols(habits.length);
@@ -166,6 +171,7 @@ export function Dashboard({
               </Link>
             </p>
             <ThemeSwitch theme={theme} />
+            <SignOut local={signOut} everywhere={signOutEverywhere} />
           </div>
         </footer>
       </div>

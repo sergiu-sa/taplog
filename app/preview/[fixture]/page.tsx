@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { readTheme } from "@/lib/theme";
 import { Dashboard, splitHabits } from "../../dashboard";
-import { previewAdd, previewRemove } from "../actions";
+import { previewAdd, previewRemove, previewSignOut, previewSignOutEverywhere } from "../actions";
 import { fixtures, fixtureStickers, today, withNewest } from "../fixtures";
 
 export const metadata: Metadata = { title: "Today" };
@@ -27,6 +27,8 @@ export default async function Preview({ params }: PageProps<"/preview/[fixture]"
       newHref={`/preview/${fixture}/new`}
       add={previewAdd}
       remove={previewRemove}
+      signOut={previewSignOut}
+      signOutEverywhere={previewSignOutEverywhere}
       theme={await readTheme()}
     />
   );
