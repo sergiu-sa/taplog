@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { formatDay, targetText } from "@/lib/habits";
 import { ease, gsap, useMotion } from "@/lib/motion";
-import { habitVars } from "@/lib/palette";
+import { habitVars, PALETTE } from "@/lib/palette";
 import { Coil } from "./coil";
 import type { Made } from "./actions";
 import type { StickerRow, StickerView } from "./detail-view";
@@ -263,7 +263,7 @@ export function StickerPage({
   }
 
   return (
-    <div className="page" style={habitVars(habit?.color ?? "#3B82F6")}>
+    <div className="page" style={habitVars(habit?.color ?? PALETTE[5].hex)}>
       <Refresh />
       <header className="masthead">
         <Link href={backHref} prefetch={false} className="trace">

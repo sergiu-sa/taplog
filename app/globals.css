@@ -19,7 +19,7 @@
   --color-muted: light-dark(#5d625c, #989d97);
   --color-etch: light-dark(#b3b8b1, #5a5f59);
   /* A coil's unlit turns, lighter than the etch hairlines by day so the lit turns lead. */
-  --color-unlit: light-dark(#c1c6bf, #5a5f59);
+  --color-unlit: light-dark(#c1c6bf, var(--color-etch));
   --color-short: light-dark(#c2202f, #ff5d52);
   /* The page transition: ink by day; etch at night, where ink is near-white and would flash. */
   --color-curtain: light-dark(#111311, #5a5f59);
