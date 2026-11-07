@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
-import { formatDay, formatGap, MAX_TARGET, minTarget, SPACINGS, type Kind, type Period } from "@/lib/habits";
+import { formatGap, MAX_TARGET, minTarget, SPACINGS, type Kind, type Period } from "@/lib/habits";
 import { ease, gsap, useMotion } from "@/lib/motion";
 import { habitVars, PALETTE } from "@/lib/palette";
 import type { Saved } from "./actions";
 import { Coil } from "./coil";
+import { Footer, NewHabit, type Frame } from "./frame";
 import type { EditorView } from "./detail-view";
 
 const STEPS = [null, ...SPACINGS];
@@ -15,20 +16,22 @@ const STEPS = [null, ...SPACINGS];
 // colour both show; it says nothing about today's count.
 export function HabitEditor({
   habit,
-  today,
   color: firstColor,
   backHref,
+  newHref = "/habits/new",
   save,
   archive,
   remove,
+  frame,
 }: {
   habit: EditorView | null; // null makes a new one
-  today: string;
   color: string; // what a new habit starts with
   backHref: string;
+  newHref?: string;
   save: (prev: Saved, form: FormData) => Promise<Saved>;
   archive?: () => Promise<string | void>; // or restore, for an archived habit
   remove?: () => Promise<string | void>;
+  frame: Frame;
 }) {
   // Controlled: React resets a form's uncontrolled fields after every action, failed ones too.
   const [title, setTitle] = useState(habit?.name ?? "");
@@ -94,10 +97,7 @@ export function HabitEditor({
         <Link href={backHref} prefetch={false} className="trace">
           ← {name ?? "Today"}
         </Link>
-        <time dateTime={today}>
-          <span className="desk:hidden">{formatDay(today)}</span>
-          <span className="hidden desk:inline">{formatDay(today, "long")}</span>
-        </time>
+        <NewHabit href={newHref} current={!habit} />
       </header>
 
       <main id="main" tabIndex={-1}>
@@ -266,6 +266,7 @@ export function HabitEditor({
           </div>
         )}
       </main>
+      <Footer {...frame} />
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { readTheme } from "@/lib/theme";
 import { toEditorView } from "../../../../../detail-view";
 import { HabitEditor } from "../../../../../habit-editor";
-import { previewDone, previewSave } from "../../../../actions";
+import { previewDone, previewSave, previewSignOut, previewSignOutEverywhere } from "../../../../actions";
 import { fixtures, today } from "../../../../fixtures";
 
 const find = (fixture: string, id: string) => (Object.hasOwn(fixtures, fixture) ? fixtures[fixture].find((h) => h.id === Number(id)) : undefined);
@@ -23,12 +24,13 @@ export default async function PreviewEdit({ params }: PageProps<"/preview/[fixtu
   return (
     <HabitEditor
       habit={toEditorView(habit, today)}
-      today={today}
       color={habit.color}
       backHref={`/preview/${fixture}/h/${id}`}
+      newHref={`/preview/${fixture}/new`}
       save={previewSave}
       archive={previewDone}
       remove={previewDone}
+      frame={{ theme: await readTheme(), signOut: previewSignOut, signOutEverywhere: previewSignOutEverywhere }}
     />
   );
 }

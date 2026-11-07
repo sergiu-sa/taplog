@@ -3,7 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { osloDay } from "@/lib/habits";
 import { loginPath } from "@/lib/login";
 import { createClient } from "@/lib/supabase/server";
-import { deleteHabit, saveHabit, setArchived } from "../../../actions";
+import { readTheme } from "@/lib/theme";
+import { deleteHabit, saveHabit, setArchived, signOut, signOutEverywhere } from "../../../actions";
 import { toEditorView } from "../../../detail-view";
 import { HabitEditor } from "../../../habit-editor";
 import { loadHabit } from "../habit";
@@ -30,12 +31,12 @@ export default async function EditHabit({ params }: PageProps<"/h/[id]/edit">) {
   return (
     <HabitEditor
       habit={toEditorView(habit, today)}
-      today={today}
       color={habit.color}
       backHref={`/h/${id}`}
       save={saveHabit.bind(null, id)}
       archive={setArchived.bind(null, id, !habit.archived_at)}
       remove={deleteHabit.bind(null, id)}
+      frame={{ theme: await readTheme(), signOut, signOutEverywhere }}
     />
   );
 }

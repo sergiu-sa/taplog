@@ -169,11 +169,13 @@
     }
   }
 
+  /* Home or back on the left, New habit on the right. */
   .masthead {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
-    padding-top: 12px;
+    align-items: center;
+    min-height: 56px;
+    padding-top: 8px;
     font-size: var(--text-meta);
     line-height: var(--text-meta--line-height);
     font-weight: 500;
@@ -183,9 +185,25 @@
     font-weight: 700;
     letter-spacing: -0.01em;
   }
-  .masthead time {
+  /* Today's Oslo date on its title's baseline: the day the counts belong to. */
+  .title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    margin-top: 16px;
+    padding-bottom: 20px;
+  }
+  .title-row .title {
+    margin: 0;
+    padding: 0;
+  }
+  .title-row time {
     color: var(--color-muted);
+    font-size: var(--text-meta);
+    font-weight: 500;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 
   .title {
@@ -197,16 +215,85 @@
     font-weight: var(--text-title--font-weight);
   }
 
-  .colophon {
+  /* The liner's printed margin: one hairline, then one row of small print, stacked in 44 px rows
+     on a phone. */
+  .foot {
     display: grid;
-    gap: 8px;
-    padding-block: 20px 32px;
+    margin-top: 8px;
+    padding-block: 8px 32px;
     border-top: 1px solid var(--color-etch);
-    text-wrap: pretty;
     color: var(--color-muted);
     font-size: var(--text-tiny);
     line-height: var(--text-tiny--line-height);
     font-weight: 500;
+  }
+  /* One sentence a line, so a weekly note never breaks mid-sentence. */
+  .foot > p {
+    padding-block: 14px 4px;
+  }
+  .foot > p > span {
+    display: block;
+  }
+  .foot__controls {
+    display: contents;
+  }
+  .foot__controls > * {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .foot__controls > .trace {
+    justify-self: start;
+    min-height: 0;
+    padding-block: 13px;
+    background-position:
+      left bottom 11px,
+      left bottom 11px;
+  }
+  /* Room above it where a page ends on a control rather than a hairline row. */
+  .page > main:not(:has(> .shelf:last-child, > .empty:last-child, > .editor__more:last-child, > .habits:last-child)) + .foot {
+    margin-top: 40px;
+  }
+  @media (width >= 68.75rem) {
+    .foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      padding-block: 6px 40px;
+    }
+    /* The controls keep their width and one row; only the note wraps, in the room they leave
+       (a weekly habit makes it long). */
+    .foot > p {
+      flex: 1 1 0;
+      min-width: 0;
+      padding-block: 0;
+    }
+    .foot__controls {
+      display: flex;
+      flex: none;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 4px 28px;
+      white-space: nowrap;
+    }
+    .foot .sign-out {
+      flex-wrap: nowrap;
+    }
+    .foot .sign-out__ask {
+      max-width: 22rem;
+      white-space: normal;
+    }
+    /* Under the row, whatever its length: inline-size containment keeps a long sentence from
+       widening the controls. */
+    .foot__controls > .day__error {
+      flex-basis: 100%;
+      contain: inline-size;
+      white-space: normal;
+      text-align: right;
+      text-wrap: balance;
+    }
   }
 
   /* Native radios drawn as words (the theme, a habit's period); the chosen one keeps a trace,
@@ -276,6 +363,16 @@
   }
   .sign-out__ask > p:first-child {
     color: var(--color-ink);
+  }
+  /* The footer's buttons are its small print's size, and their current stays ink inside a habit
+     too: the frame is the same on every page. */
+  .foot .button {
+    --lit: var(--color-ink);
+    --r: 8px;
+    height: 36px;
+    min-width: 0;
+    padding-inline: 13px;
+    font-size: var(--text-tiny);
   }
 
   .habit,
@@ -581,14 +678,6 @@
       width: 100%;
       max-width: 17.5rem;
       margin-top: 8px;
-    }
-    /* The footer sits on the habits' columns, so the sheet ends on its own grid. */
-    .colophon {
-      grid-auto-flow: column;
-      grid-auto-columns: minmax(0, 1fr);
-    }
-    .colophon > * + * {
-      padding-left: var(--gutter);
     }
 
     /* From four habits the sheet runs in rows (data-cols, from the dashboard). A row shares
@@ -900,7 +989,8 @@
       scale 0.15s var(--ease-soft);
   }
   .button::before,
-  .button::after {
+  .button::after,
+  .new-habit__mark::after {
     content: "";
     position: absolute;
     inset: -3px;
@@ -1004,14 +1094,21 @@
     --lit: var(--color-short);
     color: var(--color-short);
   }
+  /* The footer's small print carries two turns. */
+  .foot .button--line {
+    outline: 0;
+  }
   /* Focused, busy or not, the outer turn thickens into the focus ring. */
-  .button:focus-visible {
+  .button:focus-visible,
+  .foot .button--line:focus-visible {
     outline: 2px solid var(--lit);
   }
   @media (prefers-reduced-motion: reduce) {
     .button,
     .button::before,
-    .button::after {
+    .button::after,
+    .new-habit__mark,
+    .new-habit__mark::after {
       transition: none;
     }
     .button:disabled::after,
@@ -1021,29 +1118,21 @@
     }
   }
 
-  /* Under the habits: a new one, and the archived ones by name. */
-  .shelf {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 4px 24px;
-    padding-block: 10px 22px;
-    border-top: 1px solid var(--color-etch);
-  }
-  .shelf__new {
+  /* New habit, in the header: the empty die-cut mark with its plus and one unlit turn, and the
+     name on its trace. Touched, the turn winds on and current runs under the name. */
+  .new-habit {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding-block: 10px;
+    gap: 12px;
+    padding-block: 12px;
+    padding-left: 4px;
     border-radius: 4px;
-    font-size: var(--text-name);
-    line-height: var(--text-name--line-height);
-    letter-spacing: var(--text-name--letter-spacing);
-    font-weight: var(--text-name--font-weight);
+    font-weight: 650;
   }
-  /* An empty die-cut cell with a plus: where the next sticker goes. */
-  .shelf__mark {
+  .new-habit__mark {
+    --r: 5px;
+    --lit: var(--color-ink);
+    position: relative;
     width: 22px;
     aspect-ratio: 1;
     border-radius: 22%;
@@ -1053,18 +1142,52 @@
       linear-gradient(var(--color-muted) 0 0) center / 1.5px 10px no-repeat;
     transition: box-shadow 0.35s var(--ease-soft);
   }
-  .shelf__new .trace {
-    display: inline-block;
-    padding-bottom: 12px;
-    margin-bottom: -12px;
+  .new-habit__mark::after {
+    inset: -4px;
+    border-radius: calc(var(--r) + 4px);
   }
-  .shelf__new:focus-visible .trace {
+  .new-habit .trace {
+    display: inline-block;
+    padding-bottom: 8px;
+    margin-bottom: -8px;
+  }
+  .new-habit:focus-visible .trace {
     background-size:
       100% 2px,
       var(--rest) 1px;
   }
-  .shelf__new:focus-visible .shelf__mark {
+  .new-habit:focus-visible .new-habit__mark,
+  .new-habit[aria-current="page"] .new-habit__mark {
     box-shadow: inset 0 0 0 1px var(--color-ink);
+  }
+  .new-habit:focus-visible .new-habit__mark::after {
+    --sweep: 360deg;
+  }
+  .new-habit[aria-current="page"] .trace {
+    --rest-c: currentColor;
+  }
+  @media (hover: hover) {
+    .new-habit:hover .trace {
+      background-size:
+        100% 2px,
+        var(--rest) 1px;
+    }
+    .new-habit:hover .new-habit__mark {
+      box-shadow: inset 0 0 0 1px var(--color-ink);
+    }
+    .new-habit:hover .new-habit__mark::after {
+      --sweep: 360deg;
+    }
+  }
+
+  /* Under the habits: the archived ones and the loose stickers by name. */
+  .shelf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 24px;
+    padding-block: 10px 22px;
+    border-top: 1px solid var(--color-etch);
   }
   .shelf__archived {
     color: var(--color-muted);
@@ -1088,16 +1211,6 @@
   .stickers__note a:focus-visible {
     border-radius: 8px;
     outline-offset: -4px;
-  }
-  @media (hover: hover) {
-    .shelf__new:hover .trace {
-      background-size:
-        100% 2px,
-        var(--rest) 1px;
-    }
-    .shelf__new:hover .shelf__mark {
-      box-shadow: inset 0 0 0 1px var(--color-ink);
-    }
   }
 
   /* No habits yet: the slot where a sticker would sit, a dashed die-cut edge with nothing in it. */
@@ -2312,11 +2425,6 @@
     color: var(--color-muted);
     font-size: var(--text-meta);
   }
-  .login__guide {
-    margin-top: 40px;
-    color: var(--color-muted);
-    font-size: var(--text-meta);
-  }
 
   .strip {
     position: relative;
@@ -2392,11 +2500,16 @@
     }
   }
   @media (width >= 68.75rem) {
-    /* A poster: the strip across the sheet, centred in the window. */
+    /* A poster: the strip across the sheet, centred in the window between header and footer. */
+    .page:has(> .login) {
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+    }
     .login {
+      flex: 1;
       display: grid;
       align-content: center;
-      min-height: calc(100dvh - 3rem);
       padding-block: 32px 64px;
     }
     .login .title {
@@ -2537,7 +2650,6 @@
     .shelf__archived a,
     .poster__kind a,
     .stickers__note a,
-    .shelf__mark,
     .slot__edge,
     .kinds label,
     .stepper button,

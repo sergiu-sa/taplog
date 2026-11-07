@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
-import { formatDay, targetText } from "@/lib/habits";
+import { targetText } from "@/lib/habits";
 import { ease, gsap, useMotion } from "@/lib/motion";
 import { habitVars, PALETTE } from "@/lib/palette";
 import { Coil } from "./coil";
 import type { Made } from "./actions";
 import type { StickerRow, StickerView } from "./detail-view";
+import { Footer, NewHabit, type Frame } from "./frame";
 import { Refresh } from "./refresh";
 
 type Run = () => Promise<string | void>;
@@ -216,7 +217,6 @@ function LinkPanel({ label, link, replaced, onDone }: { label: string; link: str
 // habit, or an archived one, the question of which habit comes first.
 export function StickerPage({
   view,
-  today,
   backHref,
   newHref,
   move,
@@ -224,9 +224,9 @@ export function StickerPage({
   newLink,
   remove,
   restore,
+  frame,
 }: {
   view: StickerView;
-  today: string;
   backHref: string;
   newHref: string;
   move: (habitId: number) => Promise<string | void>;
@@ -234,6 +234,7 @@ export function StickerPage({
   newLink: () => Promise<Made>;
   remove: Run;
   restore?: Run; // only for a sticker on an archived habit
+  frame: Frame;
 }) {
   const { habit, label } = view;
   const live = habit !== null && !habit.archived;
@@ -269,10 +270,7 @@ export function StickerPage({
         <Link href={backHref} prefetch={false} className="trace">
           ← {habit?.name ?? "Today"}
         </Link>
-        <time dateTime={today}>
-          <span className="desk:hidden">{formatDay(today)}</span>
-          <span className="hidden desk:inline">{formatDay(today, "long")}</span>
-        </time>
+        <NewHabit href={newHref} />
       </header>
 
       <main id="main" tabIndex={-1}>
@@ -382,6 +380,7 @@ export function StickerPage({
           )}
         </div>
       </main>
+      <Footer {...frame} />
     </div>
   );
 }

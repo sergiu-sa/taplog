@@ -3,7 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { addDays, osloDay, osloTime } from "@/lib/habits";
 import { loginPath } from "@/lib/login";
 import { createClient } from "@/lib/supabase/server";
-import { addLog, addSticker, removeLog, setArchived } from "../../actions";
+import { readTheme } from "@/lib/theme";
+import { addLog, addSticker, removeLog, setArchived, signOut, signOutEverywhere } from "../../actions";
 import { pickDay, toDetailView } from "../../detail-view";
 import { HabitDetail } from "../../habit-detail";
 import { loadHabit } from "./habit";
@@ -61,6 +62,7 @@ export default async function HabitPage({ params, searchParams }: PageProps<"/h/
       remove={removeLog}
       restore={setArchived.bind(null, id, false)}
       addSticker={addSticker.bind(null, id)}
+      frame={{ theme: await readTheme(), signOut, signOutEverywhere }}
     />
   );
 }
