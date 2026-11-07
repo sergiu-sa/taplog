@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { coil } from "@/lib/coil";
 import type { Kind } from "@/lib/habits";
-import { PALETTE } from "@/lib/palette";
+import { habitVars, PALETTE } from "@/lib/palette";
 
 // The guide's line art: a few strokes and fills by role (g-e etch, g-i ink, g-m muted, g-t the
 // habit's trace; g-f* fills), so both themes and every theme pick come from the app's tokens.
@@ -76,7 +76,7 @@ export function Mark({
 }) {
   const c = coil(kind, target, count);
   const k = size < 70 ? 1.7 : 1;
-  const style = { "--habit": color, "--w": c.stroke.lit * k, "--w0": c.stroke.unlit * k } as CSSProperties;
+  const style = { ...habitVars(color), "--w": c.stroke.lit * k, "--w0": c.stroke.unlit * k } as CSSProperties;
   const whole = only === undefined;
   return (
     <g className="coil__svg guide__mark" data-f={f} transform={`translate(${x} ${y}) scale(${size / 100})`} data-edge={c.edge} data-spill={c.spill} style={style}>

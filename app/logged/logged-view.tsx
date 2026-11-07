@@ -1,5 +1,6 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { formatGap, type Kind, type Tone } from "@/lib/habits";
+import { habitVars } from "@/lib/palette";
 import { Coil } from "../coil";
 import { BackToToday } from "../gone";
 import { NextFrom } from "../next-from";
@@ -27,7 +28,7 @@ export function sinceLine(created: number, previous: string | undefined) {
 
 export function LoggedView(p: LoggedProps) {
   return (
-    <div className="page logged" style={{ "--habit": p.color } as CSSProperties}>
+    <div className="page logged" style={habitVars(p.color)}>
       <main id="main" tabIndex={-1} className="logged__main">
         <div className="logged__head">
           <p className="logged__meta">{p.dup ? "Already counted" : "Logged"}</p>

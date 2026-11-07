@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { ease, gsap, reducedMotion } from "@/lib/motion";
-import { PALETTE } from "@/lib/palette";
+import { habitVars, PALETTE } from "@/lib/palette";
 import { CAP, SECTIONS } from "./copy";
 import { Bar, BLUE, Box, Btn, Fields, Hair, hue, Mark } from "./parts";
 
@@ -344,7 +344,7 @@ const STAGE = (
       <Mark f="L3" x={190} y={34} size={150} kind="limit" target={3} count={3} color={TEAL} />
       <Mark f="L4" x={190} y={34} size={150} kind="limit" target={3} count={4} color={TEAL} />
       </g>
-      <g data-f="week" className="guide__hc" style={{ "--habit": GREEN } as CSSProperties}>
+      <g data-f="week" className="guide__hc" style={habitVars(GREEN)}>
         <rect data-f="wkFill" className="g-ft" x={40} y={232} width={280} height={40} rx={8.8} />
         <rect className="g-e" x={40} y={232} width={280} height={40} rx={8.8} strokeWidth={1.4} />
         {Array.from({ length: 7 }, (_, i) => <circle key={i} className="g-fe" cx={60 + i * 40} cy={252} r={2.2} />)}
@@ -356,7 +356,7 @@ const STAGE = (
         ))}
         <rect className="g-i" x={34} y={226} width={292} height={52} rx={11} strokeWidth={1.8} />
       </g>
-      <g data-f="spacing" className="guide__hc" style={{ "--habit": TEAL } as CSSProperties}>
+      <g data-f="spacing" className="guide__hc" style={habitVars(TEAL)}>
         <path data-f="spLine" data-dw className="g-e" strokeWidth={2} d="M30 334H330" pathLength={1} />
         <rect data-f="spA" className="g-ft" x={62} y={326} width={16} height={16} rx={3.5} />
         <rect data-f="spB" className="g-ft" x={142} y={326} width={16} height={16} rx={3.5} />
@@ -850,7 +850,7 @@ export function Film() {
           viewBox="0 30 360 360"
           role="img"
           aria-label="A short film of the steps listed below, from buying stickers to adding taplog to the Home Screen."
-          style={{ "--habit": BLUE } as CSSProperties}
+          style={habitVars(BLUE)}
         >
           {STAGE}
         </svg>

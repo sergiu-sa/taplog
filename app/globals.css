@@ -18,6 +18,8 @@
   --color-ink: light-dark(#111311, #e9ebe7);
   --color-muted: light-dark(#5d625c, #989d97);
   --color-etch: light-dark(#b3b8b1, #5a5f59);
+  /* A coil's unlit turns, lighter than the etch hairlines by day so the lit turns lead. */
+  --color-unlit: light-dark(#c1c6bf, #5a5f59);
   --color-short: light-dark(#c2202f, #ff5d52);
   /* The page transition: ink by day; etch at night, where ink is near-white and would flash. */
   --color-curtain: light-dark(#111311, #5a5f59);
@@ -271,9 +273,12 @@
   .logged,
   .strip__slot,
   .guide__hc,
-  .guide__mark {
-    --trace: light-dark(color-mix(in oklab, var(--habit) 80%, black), var(--habit));
-    --glint: color-mix(in oklab, var(--habit) 45%, white);
+  .guide__mark,
+  .swatch {
+    --trace: light-dark(var(--habit-light), var(--habit));
+    /* The current is a spark on the line: brighter than it at night, darker by day, where white
+       read as a gap in it. */
+    --glint: light-dark(color-mix(in oklab, var(--trace) 70%, black), color-mix(in oklab, var(--habit) 45%, white));
   }
 
   /* One habit: count and days on the left, the coil on the right where the thumb is. */
@@ -676,7 +681,7 @@
   }
   .coil__turn {
     --tone: var(--trace);
-    stroke: var(--color-etch);
+    stroke: var(--color-unlit);
     stroke-width: var(--w0);
     stroke-linecap: round;
   }
@@ -702,7 +707,7 @@
   }
   .coil__lead,
   .coil__bridge {
-    stroke: var(--color-etch);
+    stroke: var(--color-unlit);
     stroke-width: 1.2;
     stroke-linecap: round;
   }
@@ -1269,7 +1274,7 @@
     width: 30px;
     aspect-ratio: 1;
     border-radius: 22%;
-    background: light-dark(color-mix(in oklab, var(--c) 80%, black), var(--c));
+    background: var(--trace);
     transition: box-shadow 0.35s var(--ease-soft);
   }
   /* The chosen colour keeps a ring, as today keeps its ring on the grid. */

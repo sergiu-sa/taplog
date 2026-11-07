@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useRef, useState, useTransition, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useTransition } from "react";
 import { formatDay, targetText } from "@/lib/habits";
 import { ease, gsap, useMotion } from "@/lib/motion";
+import { habitVars } from "@/lib/palette";
 import { Coil } from "./coil";
 import type { Made } from "./actions";
 import type { StickerRow, StickerView } from "./detail-view";
@@ -262,7 +263,7 @@ export function StickerPage({
   }
 
   return (
-    <div className="page" style={{ "--habit": habit?.color ?? "#3B82F6" } as CSSProperties}>
+    <div className="page" style={habitVars(habit?.color ?? "#3B82F6")}>
       <Refresh />
       <header className="masthead">
         <Link href={backHref} prefetch={false} className="trace">
@@ -309,7 +310,7 @@ export function StickerPage({
                     <button
                       type="button"
                       className="pick__habit"
-                      style={{ "--habit": h.color } as CSSProperties}
+                      style={habitVars(h.color)}
                       aria-disabled={busy || undefined}
                       onClick={() => run(() => move(h.id))}
                     >

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { habitVars } from "@/lib/palette";
 import { SECTIONS } from "./copy";
 import { DRAW } from "./drawings";
 import { DrawIn, Film } from "./film";
@@ -35,7 +36,7 @@ export default function GuidePage() {
               {[...s.steps, ...(s.warn ? [s.warn] : [])].map((step) => (
                 <li key={step.key} data-warn={step === s.warn || undefined}>
                   <figure>
-                    <svg className="guide__art guide__hc" viewBox="0 0 160 160" role="img" aria-label={step.alt} style={{ "--habit": BLUE } as CSSProperties}>
+                    <svg className="guide__art guide__hc" viewBox="0 0 160 160" role="img" aria-label={step.alt} style={habitVars(BLUE)}>
                       {DRAW[step.key]()}
                     </svg>
                     <figcaption>

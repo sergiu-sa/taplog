@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, type CSSProperties } from "react";
+import { useRef } from "react";
 import { formatDay, habitStatus, todayStreak, weekStart, type Kind, type Period } from "@/lib/habits";
 import { curtainFrom, ease, gsap, useMotion } from "@/lib/motion";
+import { habitVars } from "@/lib/palette";
 import { CoilButton } from "./coil-button";
 import { CellKey, toCells, toWeeks, weekLabel, WeekKey, type Day } from "./day-cells";
 import { NextFrom } from "./next-from";
@@ -65,7 +66,7 @@ export function HabitRow({
   );
 
   return (
-    <section ref={row} className="habit" aria-labelledby={`habit-${id}-name`} style={{ "--habit": habit.color } as CSSProperties}>
+    <section ref={row} className="habit" aria-labelledby={`habit-${id}-name`} style={habitVars(habit.color)}>
       <h2 id={`habit-${id}-name`} className="habit__name">
         <Link
           href={href}
