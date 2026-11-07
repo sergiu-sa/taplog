@@ -1,4 +1,5 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
+import { habitVars } from "@/lib/palette";
 import { Bar, Box, Btn, Fields, hue, Mark, Phone, Tap, Touch } from "./parts";
 
 // One drawing per step, in a 160 box. Each reads without its caption: a lit coil works, a broken
@@ -37,7 +38,7 @@ export const DRAW: Record<string, () => ReactNode> = {
       {([[24, hue("Blue"), 54], [92, GREEN, 40]] as const).map(([y, c, l]) => (
         <g key={y}>
           <Mark x={10} y={y - 18} size={40} target={3} count={3} color={c} />
-          <path className="g-t guide__hc" style={{ "--habit": c } as CSSProperties} strokeWidth={2.4} d={`M50 ${y + 2}H70`} />
+          <path className="g-t guide__hc" style={habitVars(c)} strokeWidth={2.4} d={`M50 ${y + 2}H70`} />
           <Box x={70} y={y - 8} w={80} h={20} />
           <rect className="g-i" x={77} y={y - 2} width={10} height={8} rx={3} strokeWidth={1.6} />
           <rect className="g-i" x={85} y={y - 2} width={10} height={8} rx={3} strokeWidth={1.6} />
@@ -264,7 +265,7 @@ export const DRAW: Record<string, () => ReactNode> = {
   week: () => (
     <>
       <Mark x={36} y={4} size={88} target={3} count={2} color={GREEN} />
-      <g className="guide__hc" style={{ "--habit": GREEN } as CSSProperties}>
+      <g className="guide__hc" style={habitVars(GREEN)}>
         <rect className="g-e" x={18} y={118} width={124} height={24} rx={5.3} strokeWidth={1.4} />
         {Array.from({ length: 7 }, (_, i) => (
           <circle key={i} className={[1, 4].includes(i) ? "g-ft" : "g-fe"} cx={30 + i * 16.7} cy={130} r={[1, 4].includes(i) ? 3.2 : 1.6} />
@@ -277,7 +278,7 @@ export const DRAW: Record<string, () => ReactNode> = {
     <>
       <Mark x={45} y={2} size={70} kind="limit" target={5} count={2} color={TEAL} />
       <path className="g-e" strokeWidth={1.6} d="M10 116H150" />
-      <g className="guide__hc" style={{ "--habit": TEAL } as CSSProperties}>
+      <g className="guide__hc" style={habitVars(TEAL)}>
         <rect className="g-ft" x={26} y={110} width={12} height={12} rx={2.6} />
         <rect className="g-ft" x={62} y={110} width={12} height={12} rx={2.6} />
       </g>

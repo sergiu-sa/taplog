@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useOptimistic, useRef, useState, useTransition, type CSSProperties } from "react";
+import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { addDays, formatDay, formatGap, habitStatus, osloTime, pastStatus, periodOf, targetText, todayStreak, weekStart, type DayState, type Kind } from "@/lib/habits";
 import { arrived, curtainFrom, ease, gsap, useMotion } from "@/lib/motion";
+import { habitVars } from "@/lib/palette";
 import type { Made } from "./actions";
 import { Coil } from "./coil";
 import { CoilButton } from "./coil-button";
@@ -80,7 +81,7 @@ export function HabitDetail({
   return (
     <PageTurn>
       <Refresh />
-      <div ref={root} className="page detail" style={{ "--habit": view.color } as CSSProperties}>
+      <div ref={root} className="page detail" style={habitVars(view.color)}>
         <header className="masthead">
           <Link
             href={backHref}

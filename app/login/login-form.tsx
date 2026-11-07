@@ -1,8 +1,8 @@
 "use client";
 
-import { type CSSProperties, useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { loginPath } from "@/lib/login";
-import { PALETTE } from "@/lib/palette";
+import { habitVars, PALETTE } from "@/lib/palette";
 import { ease, gsap, reducedMotion, useMotion } from "@/lib/motion";
 import { Coil } from "../coil";
 
@@ -119,7 +119,7 @@ export function LoginForm({
                 <div
                   key={i}
                   className="strip__slot"
-                  style={{ "--habit": PALETTE[i].hex } as CSSProperties}
+                  style={habitVars(PALETTE[i].hex)}
                   data-filled={digit !== undefined || undefined}
                   data-next={i === Math.min(code.length, DIGITS - 1) || undefined}
                 >

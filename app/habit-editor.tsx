@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useRef, useState, useTransition, type CSSProperties } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { formatDay, formatGap, MAX_TARGET, minTarget, SPACINGS, type Kind, type Period } from "@/lib/habits";
 import { ease, gsap, useMotion } from "@/lib/motion";
-import { PALETTE } from "@/lib/palette";
+import { habitVars, PALETTE } from "@/lib/palette";
 import type { Saved } from "./actions";
 import { Coil } from "./coil";
 import type { EditorView } from "./detail-view";
@@ -109,7 +109,7 @@ export function HabitEditor({
             formAction(form);
           }}
           className="editor"
-          style={{ "--habit": color } as CSSProperties}
+          style={habitVars(color)}
         >
           <div className="editor__fields">
             <label className="field">
@@ -210,7 +210,7 @@ export function HabitEditor({
             <legend>Colour</legend>
             <div className="swatches">
               {PALETTE.map((c) => (
-                <label key={c.hex} className="swatch" style={{ "--c": c.hex } as CSSProperties}>
+                <label key={c.hex} className="swatch" style={habitVars(c.hex)}>
                   <input type="radio" name="color" value={c.hex} checked={color === c.hex} onChange={() => setColor(c.hex)} aria-label={c.name} />
                   <span />
                 </label>

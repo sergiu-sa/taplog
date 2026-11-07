@@ -5,6 +5,7 @@ import { onTrack, type Kind } from "./habits.ts";
 // turns past the target wound outside that edge.
 
 const EDGE = 12; // die-cut edge inset; the 12 around it is room for spilled turns
+const LIMIT_GAP = 2; // a broken limit's red spill starts this much further out, apart from its turns
 const EDGE_R = 16.7; // 22% of the edge's side
 const OUTER = 15; // inset of the last target turn
 const BAND = 23; // from the last turn in to the innermost one, which clears the chip
@@ -29,12 +30,13 @@ function turnPath(a: number, next: number) {
 export function coil(kind: Kind, target: number, count: number) {
   const pitch = target > 1 ? Math.min(BAND / (target - 1), 9) : 0;
   const spillPitch = Math.min(pitch || 3, 3);
-  const room = Math.floor((EDGE - 1.5) / spillPitch);
+  const gap = kind === "limit" ? LIMIT_GAP : 0;
+  const room = Math.floor((EDGE - 1.5 - gap) / spillPitch);
   // One turn past the count is always drawn (unlit), so hover can preview it.
   const spilled = Math.min(Math.max(count + 1 - target, 0), room);
   const insets = [
     ...Array.from({ length: target }, (_, k) => OUTER + (target - 1 - k) * pitch),
-    ...Array.from({ length: spilled }, (_, j) => EDGE - (j + 1) * spillPitch),
+    ...Array.from({ length: spilled }, (_, j) => EDGE - gap - (j + 1) * spillPitch),
   ];
 
   // The last drawn turn ends in a short tail to the bridge: inside the edge unless it spilled.
