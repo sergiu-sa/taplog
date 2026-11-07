@@ -195,7 +195,7 @@ function LinkPanel({ label, link, replaced, onDone }: { label: string; link: str
       </h3>
       <input ref={field} className="panel__link" readOnly value={link} onFocus={(e) => e.target.select()} aria-label={`Link for ${label}`} />
       {/* Opened by Add or New link, so focus follows to the one thing to do next. */}
-      <button type="button" className="button panel__copy" autoFocus onClick={copy}>
+      <button type="button" className="button button--wide" autoFocus onClick={copy}>
         {copied ? "Copied" : "Copy link"}
       </button>
       <ol className="panel__steps">
@@ -205,7 +205,7 @@ function LinkPanel({ label, link, replaced, onDone }: { label: string; link: str
       </ol>
       {replaced && <p className="panel__note">The old link has stopped. A Shortcuts automation on this sticker needs the new one too.</p>}
       <p className="panel__note">Shown once. Paste it nowhere else: a chat’s link preview logs a tap.</p>
-      <button type="button" className="undo panel__done" onClick={onDone}>
+      <button type="button" className="button button--line panel__done" onClick={onDone}>
         Done
       </button>
     </div>
@@ -346,7 +346,7 @@ export function StickerPage({
                   <button type="button" className="button" autoFocus aria-disabled={busy || undefined} onClick={() => run(newLink)}>
                     Make a new link
                   </button>
-                  <button type="button" className="undo" onClick={() => setConfirm(null)}>
+                  <button type="button" className="button button--line" onClick={() => setConfirm(null)}>
                     Keep this one
                   </button>
                 </div>
@@ -359,16 +359,16 @@ export function StickerPage({
                   <button type="button" className="button" autoFocus aria-disabled={busy || undefined} onClick={() => run(remove)}>
                     Remove {label}
                   </button>
-                  <button type="button" className="undo" onClick={() => setConfirm(null)}>
+                  <button type="button" className="button button--line" onClick={() => setConfirm(null)}>
                     Keep it
                   </button>
                 </div>
               ) : (
                 <>
-                  <button type="button" className="undo" onClick={() => setConfirm("link")}>
+                  <button type="button" className="button button--line" onClick={() => setConfirm("link")}>
                     New link
                   </button>
-                  <button type="button" className="undo" onClick={() => setConfirm("remove")}>
+                  <button type="button" className="button button--line button--short" onClick={() => setConfirm("remove")}>
                     Remove
                   </button>
                 </>

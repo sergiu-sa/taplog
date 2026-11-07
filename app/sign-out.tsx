@@ -48,7 +48,7 @@ export function SignOut({ local, everywhere }: { local: SignOutLocal; everywhere
           <p className="sign-out">
             <button
               type="button"
-              className="undo sign-out__yes"
+              className="button"
               autoFocus
               aria-describedby={id}
               aria-disabled={busy || undefined}
@@ -56,17 +56,17 @@ export function SignOut({ local, everywhere }: { local: SignOutLocal; everywhere
             >
               Yes, sign out everywhere
             </button>
-            <button type="button" className="undo" aria-disabled={busy || undefined} onClick={() => ask(false)}>
+            <button type="button" className="button button--line" aria-disabled={busy || undefined} onClick={() => ask(false)}>
               Keep it
             </button>
           </p>
         </div>
       ) : (
         <p className="sign-out">
-          <button type="button" className="undo" aria-disabled={busy || undefined} onClick={() => run(local)}>
+          <button type="button" className="button button--line" aria-disabled={busy || undefined} onClick={() => run(local)}>
             Sign out
           </button>
-          <button type="button" className="undo" aria-disabled={busy || undefined} onClick={() => ask(true)}>
+          <button type="button" className="button button--line" aria-disabled={busy || undefined} onClick={() => ask(true)}>
             Sign out everywhere
           </button>
         </p>

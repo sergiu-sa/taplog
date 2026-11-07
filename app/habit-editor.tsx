@@ -235,7 +235,7 @@ export function HabitEditor({
 
         {habit && (
           <div className="editor__more">
-            <button type="button" className="undo" aria-disabled={busy || undefined} onClick={() => run(archive!)}>
+            <button type="button" className="button button--line" aria-disabled={busy || undefined} onClick={() => run(archive!)}>
               {habit.archived ? `Restore ${habit.name}` : `Archive ${habit.name}`}
             </button>
             {confirming ? (
@@ -249,12 +249,12 @@ export function HabitEditor({
                 <button type="button" className="button" autoFocus aria-disabled={busy || undefined} onClick={() => run(remove!)}>
                   Delete {habit.name}
                 </button>
-                <button type="button" className="undo" onClick={() => setConfirming(false)}>
+                <button type="button" className="button button--line" onClick={() => setConfirming(false)}>
                   Keep it
                 </button>
               </div>
             ) : (
-              <button type="button" className="undo" onClick={() => setConfirming(true)}>
+              <button type="button" className="button button--line button--short" onClick={() => setConfirming(true)}>
                 Delete
               </button>
             )}
