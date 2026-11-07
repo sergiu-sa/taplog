@@ -105,16 +105,17 @@
     translate: none;
   }
 
-  /* Trace run: a 2 px line runs in from the left. The current page keeps a 1 px one at rest. */
+  /* Trace run: an etch trace at rest, so a phone sees a control, and a 2 px current runs in from
+     the left on hover. The current page keeps its trace in ink. */
   .trace {
-    --rest: 0%;
+    --rest: 100%;
     background:
       linear-gradient(currentColor 0 0) left bottom 0.4rem / 0% 2px no-repeat,
-      linear-gradient(currentColor 0 0) left bottom 0.4rem / var(--rest) 1px no-repeat;
+      linear-gradient(var(--rest-c, var(--color-etch)) 0 0) left bottom 0.4rem / var(--rest) 1px no-repeat;
     transition: background-size 0.45s var(--ease-out);
   }
   .trace[aria-current="page"] {
-    --rest: 100%;
+    --rest-c: currentColor;
   }
   .trace:focus-visible {
     border-radius: 4px;
@@ -226,7 +227,7 @@
       left bottom 0.15rem;
   }
   .words label:has(:checked) .trace {
-    --rest: 100%;
+    --rest-c: currentColor;
   }
   .words label:has(:focus-visible) .trace {
     border-radius: 4px;
@@ -808,20 +809,37 @@
     color: var(--color-short);
   }
 
-  /* Utility text buttons (Undo, Remove): padded to 44 px without moving the line. */
+  /* Text buttons (Undo, a tap's Remove, Use another email) and links set in a line of text: on an
+     etch trace at rest, current runs along it on hover. Padded to a thumb's height without moving
+     the line, so the trace hangs off the content box. */
+  .undo,
+  .shelf__archived a,
+  .poster__kind a,
+  .stickers__note a {
+    background:
+      linear-gradient(currentColor 0 0) left bottom -2px / 0% 2px no-repeat,
+      linear-gradient(var(--color-etch) 0 0) left bottom -2px / 100% 1px no-repeat;
+    background-origin: content-box;
+    transition:
+      color 0.35s var(--ease-soft),
+      background-size 0.45s var(--ease-out);
+  }
   .undo {
     position: relative;
     padding: 13px 8px;
     margin: -13px -8px;
     color: inherit;
     font: inherit;
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 3px;
     cursor: pointer;
-    transition:
-      color 0.35s var(--ease-soft),
-      text-decoration-thickness 0.35s var(--ease-soft);
+  }
+  .undo:focus-visible,
+  .shelf__archived a:focus-visible,
+  .poster__kind a:focus-visible,
+  .stickers__note a:focus-visible {
+    color: var(--color-ink);
+    background-size:
+      100% 2px,
+      100% 1px;
   }
   .undo:focus-visible {
     border-radius: 10px;
@@ -834,9 +852,14 @@
   }
   @media (hover: hover) {
     .undo:hover,
-    .tap .undo:hover {
+    .tap .undo:hover,
+    .shelf__archived a:hover,
+    .poster__kind a:hover,
+    .stickers__note a:hover {
       color: var(--color-ink);
-      text-decoration-thickness: 2px;
+      background-size:
+        100% 2px,
+        100% 1px;
     }
   }
 
@@ -943,19 +966,17 @@
   .shelf__archived a,
   .poster__kind a {
     color: var(--color-ink);
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 3px;
-    transition: text-decoration-thickness 0.35s var(--ease-soft);
   }
   /* Padded to a thumb's height without moving the line. */
-  .shelf__archived a {
+  .shelf__archived a,
+  .stickers__note a {
     display: inline-block;
     padding: 12px 7px;
     margin: -12px -7px;
   }
   .shelf__archived a:focus-visible,
-  .poster__kind a:focus-visible {
+  .poster__kind a:focus-visible,
+  .stickers__note a:focus-visible {
     border-radius: 8px;
     outline-offset: -4px;
   }
@@ -967,10 +988,6 @@
     }
     .shelf__new:hover .shelf__mark {
       box-shadow: inset 0 0 0 1px var(--color-ink);
-    }
-    .shelf__archived a:hover,
-    .poster__kind a:hover {
-      text-decoration-thickness: 2px;
     }
   }
 
@@ -1403,8 +1420,6 @@
   }
   .stickers__note a {
     color: var(--color-ink);
-    text-decoration: underline;
-    text-underline-offset: 3px;
   }
   .stickers__list {
     margin-top: 8px;
@@ -1873,7 +1888,9 @@
     line-height: 1;
     font-weight: 600;
   }
+  /* The arrows read as controls on their own, so no trace at rest. */
   .day__step.trace {
+    --rest: 0%;
     background-position:
       center bottom 9px,
       center bottom 9px;
@@ -2412,6 +2429,9 @@
     .coil__svg,
     .coil__field,
     .undo,
+    .shelf__archived a,
+    .poster__kind a,
+    .stickers__note a,
     .button,
     .shelf__mark,
     .slot__edge,
