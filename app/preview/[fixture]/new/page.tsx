@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { freeColor } from "@/lib/palette";
+import { readTheme } from "@/lib/theme";
 import { HabitEditor } from "../../../habit-editor";
-import { previewSave } from "../../actions";
-import { fixtures, today } from "../../fixtures";
+import { previewSave, previewSignOut, previewSignOutEverywhere } from "../../actions";
+import { fixtures } from "../../fixtures";
 
 export const metadata: Metadata = { title: "New habit" };
 
@@ -13,5 +14,14 @@ export default async function PreviewNew({ params }: PageProps<"/preview/[fixtur
   const { fixture } = await params;
   if (!Object.hasOwn(fixtures, fixture)) notFound();
 
-  return <HabitEditor habit={null} today={today} color={freeColor(fixtures[fixture])} backHref={`/preview/${fixture}`} save={previewSave} />;
+  return (
+    <HabitEditor
+      habit={null}
+      color={freeColor(fixtures[fixture])}
+      backHref={`/preview/${fixture}`}
+      newHref={`/preview/${fixture}/new`}
+      save={previewSave}
+      frame={{ theme: await readTheme(), signOut: previewSignOut, signOutEverywhere: previewSignOutEverywhere }}
+    />
+  );
 }

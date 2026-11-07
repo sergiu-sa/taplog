@@ -38,9 +38,7 @@ export default async function Page() {
       loose={loose}
       add={addLog}
       remove={removeLog}
-      signOut={signOut}
-      signOutEverywhere={signOutEverywhere}
-      theme={await readTheme()}
+      frame={{ theme: await readTheme(), signOut, signOutEverywhere }}
     />
   );
 }

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { readTheme } from "@/lib/theme";
 import { pickDay, toDetailView } from "../../../../detail-view";
 import { HabitDetail } from "../../../../habit-detail";
-import { previewAdd, previewRemove, previewDone, previewToken } from "../../../actions";
+import { previewAdd, previewRemove, previewDone, previewSignOut, previewSignOutEverywhere, previewToken } from "../../../actions";
 import { fixtureRecent, fixtures, fixtureTaps, today, withNewest } from "../../../fixtures";
 
 export async function generateMetadata({ params }: PageProps<"/preview/[fixture]/h/[id]">): Promise<Metadata> {
@@ -29,10 +30,12 @@ export default async function PreviewHabit({ params, searchParams }: PageProps<"
       backHref={`/preview/${fixture}`}
       editHref={`/preview/${fixture}/h/${id}/edit`}
       stickerHref={`/preview/${fixture}/stickers/`}
+      newHref={`/preview/${fixture}/new`}
       add={previewAdd}
       remove={previewRemove}
       restore={previewDone}
       addSticker={previewToken}
+      frame={{ theme: await readTheme(), signOut: previewSignOut, signOutEverywhere: previewSignOutEverywhere }}
     />
   );
 }

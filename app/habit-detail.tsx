@@ -9,6 +9,7 @@ import { habitVars } from "@/lib/palette";
 import type { Made } from "./actions";
 import { Coil } from "./coil";
 import { CoilButton } from "./coil-button";
+import { Footer, NewHabit, type Frame } from "./frame";
 import { PageTurn } from "./page-turn";
 import { CellKey, toCells, toWeeks, WeekKey, type Cell, type WeekCell } from "./day-cells";
 import { NextFrom } from "./next-from";
@@ -24,10 +25,12 @@ export function HabitDetail({
   backHref = "/",
   editHref,
   stickerHref = "/stickers/",
+  newHref = "/habits/new",
   add,
   remove,
   restore,
   addSticker,
+  frame,
 }: {
   view: DetailView;
   today: string;
@@ -35,10 +38,12 @@ export function HabitDetail({
   backHref?: string;
   editHref: string;
   stickerHref?: string;
+  newHref?: string;
   add: Add;
   remove: Remove;
   restore: () => Promise<string | void>;
   addSticker: (label: string) => Promise<Made>;
+  frame: Frame;
 }) {
   const { id, name, kind, period, target } = view;
   const tally = useTally(view, add, remove);
@@ -92,10 +97,7 @@ export function HabitDetail({
           >
             ← Today
           </Link>
-          <time dateTime={today}>
-            <span className="desk:hidden">{formatDay(today)}</span>
-            <span className="hidden desk:inline">{formatDay(today, "long")}</span>
-          </time>
+          <NewHabit href={newHref} />
         </header>
 
         <main id="main" tabIndex={-1}>
@@ -188,9 +190,7 @@ export function HabitDetail({
           )}
         </main>
 
-        <footer className="colophon">
-          <p>Counts reset at midnight, Oslo time.{period === "week" && " Weekly counts start again each Monday."}</p>
-        </footer>
+        <Footer {...frame} weekly={period === "week"} />
       </div>
     </PageTurn>
   );

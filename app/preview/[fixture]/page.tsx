@@ -27,9 +27,7 @@ export default async function Preview({ params }: PageProps<"/preview/[fixture]"
       newHref={`/preview/${fixture}/new`}
       add={previewAdd}
       remove={previewRemove}
-      signOut={previewSignOut}
-      signOutEverywhere={previewSignOutEverywhere}
-      theme={await readTheme()}
+      frame={{ theme: await readTheme(), signOut: previewSignOut, signOutEverywhere: previewSignOutEverywhere }}
     />
   );
 }

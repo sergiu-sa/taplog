@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { habitVars } from "@/lib/palette";
+import { readTheme } from "@/lib/theme";
+import { Footer } from "../frame";
 import { SECTIONS } from "./copy";
 import { DRAW } from "./drawings";
 import { DrawIn, Film } from "./film";
@@ -11,7 +13,7 @@ export const metadata: Metadata = { title: "How it works" };
 
 // Public on purpose: it reads no session and no data, so unlike every other page it has no
 // getClaims() check and stays out of proxy.ts's matcher.
-export default function GuidePage() {
+export default async function GuidePage() {
   return (
     <div className="page guide">
       <header className="masthead">
@@ -55,6 +57,7 @@ export default function GuidePage() {
           </Link>
         </p>
       </main>
+      <Footer theme={await readTheme()} guide={false} />
       <DrawIn />
     </div>
   );

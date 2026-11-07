@@ -3,12 +3,10 @@ import type { CSSProperties } from "react";
 import { coil } from "@/lib/coil";
 import { addDays, formatDay, nextFrom, periodCounts, periodOf, periodTarget, runBefore, targetOn, weekStart, type Kind, type Period } from "@/lib/habits";
 import type { Tables } from "@/lib/supabase/types";
-import type { Theme } from "@/lib/theme";
+import { Footer, NewHabit, type Frame } from "./frame";
 import { HabitRow, type HabitView } from "./habit-row";
 import { PageTurn } from "./page-turn";
 import { Refresh } from "./refresh";
-import { SignOut, type SignOutEverywhere, type SignOutLocal } from "./sign-out";
-import { ThemeSwitch } from "./theme-switch";
 import type { Add, Remove } from "./use-tally";
 
 const WEEKS = 5;
@@ -79,9 +77,7 @@ export function Dashboard({
   newHref = "/habits/new",
   add,
   remove,
-  signOut,
-  signOutEverywhere,
-  theme,
+  frame,
 }: {
   today: string;
   habits: HabitView[];
@@ -92,9 +88,7 @@ export function Dashboard({
   newHref?: string;
   add: Add;
   remove: Remove;
-  signOut: SignOutLocal;
-  signOutEverywhere: SignOutEverywhere;
-  theme?: Theme;
+  frame: Frame;
 }) {
   const cols = sheetCols(habits.length);
   const weekly = habits.some((h) => h.period === "week");
@@ -106,14 +100,18 @@ export function Dashboard({
           <Link href="/" prefetch={false} className="trace" aria-current="page">
             taplog
           </Link>
-          <time dateTime={today}>
-            <span className="desk:hidden">{formatDay(today)}</span>
-            <span className="hidden desk:inline">{formatDay(today, "long")}</span>
-          </time>
+          {/* An empty Today's slot is the way to a first habit, so the header leaves it alone. */}
+          {habits.length > 0 && <NewHabit href={newHref} />}
         </header>
 
         <main id="main" tabIndex={-1}>
-          <h1 className="title">Today</h1>
+          <div className="title-row">
+            <h1 className="title">Today</h1>
+            <time dateTime={today}>
+              <span className="desk:hidden">{formatDay(today)}</span>
+              <span className="hidden desk:inline">{formatDay(today, "long")}</span>
+            </time>
+          </div>
           {habits.length > 0 ? (
             <>
               <div className="habits" data-cols={cols} style={cols ? ({ "--cols": cols } as CSSProperties) : undefined}>
@@ -121,14 +119,12 @@ export function Dashboard({
                   <HabitRow key={h.id} habit={h} today={today} index={i} href={`${habitHref}${h.id}`} add={add} remove={remove} />
                 ))}
               </div>
-              <div className="shelf">
-                <Link href={newHref} prefetch={false} className="shelf__new">
-                  <span className="shelf__mark" aria-hidden="true" />
-                  <span className="trace">New habit</span>
-                </Link>
-                <ShelfLine title="Archived" items={archived} href={habitHref} />
-                <ShelfLine title="Stickers with no habit" items={loose} href={stickerHref} />
-              </div>
+              {(archived.length > 0 || loose.length > 0) && (
+                <div className="shelf">
+                  <ShelfLine title="Archived" items={archived} href={habitHref} />
+                  <ShelfLine title="Stickers with no habit" items={loose} href={stickerHref} />
+                </div>
+              )}
             </>
           ) : (
             <div className="empty">
@@ -153,27 +149,7 @@ export function Dashboard({
           )}
         </main>
 
-        <footer className="colophon">
-          {habits.length > 0 && (
-            <>
-              <p>Every sticker tap winds one more turn. Hold a coil to add one by hand.</p>
-              <p>
-                {weekly ? "The outlined day is today, the outlined week this week." : "The outlined day is today."} Dots are days before
-                tracking began or still to come.
-              </p>
-            </>
-          )}
-          <div>
-            <p>Counts reset at midnight, Oslo time.{weekly && " Weekly counts start again each Monday."}</p>
-            <p>
-              <Link href="/guide" prefetch={false} className="undo">
-                How it works
-              </Link>
-            </p>
-            <ThemeSwitch theme={theme} />
-            <SignOut local={signOut} everywhere={signOutEverywhere} />
-          </div>
-        </footer>
+        <Footer {...frame} weekly={weekly} />
       </div>
     </PageTurn>
   );

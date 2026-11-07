@@ -89,6 +89,18 @@
   }
 }
 
+/* A button's turns: how far round current has wound, and where a busy one's current has got to. */
+@property --sweep {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@property --spin {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
 @layer components {
   .skip-link {
     position: fixed;
@@ -105,16 +117,17 @@
     translate: none;
   }
 
-  /* Trace run: a 2 px line runs in from the left. The current page keeps a 1 px one at rest. */
+  /* Trace run: an etch trace at rest, so a phone sees a control, and a 2 px current runs in from
+     the left on hover. The current page keeps its trace in ink. */
   .trace {
-    --rest: 0%;
+    --rest: 100%;
     background:
       linear-gradient(currentColor 0 0) left bottom 0.4rem / 0% 2px no-repeat,
-      linear-gradient(currentColor 0 0) left bottom 0.4rem / var(--rest) 1px no-repeat;
+      linear-gradient(var(--rest-c, var(--color-etch)) 0 0) left bottom 0.4rem / var(--rest) 1px no-repeat;
     transition: background-size 0.45s var(--ease-out);
   }
   .trace[aria-current="page"] {
-    --rest: 100%;
+    --rest-c: currentColor;
   }
   .trace:focus-visible {
     border-radius: 4px;
@@ -156,11 +169,13 @@
     }
   }
 
+  /* Home or back on the left, New habit on the right. */
   .masthead {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
-    padding-top: 12px;
+    align-items: center;
+    min-height: 56px;
+    padding-top: 8px;
     font-size: var(--text-meta);
     line-height: var(--text-meta--line-height);
     font-weight: 500;
@@ -170,9 +185,25 @@
     font-weight: 700;
     letter-spacing: -0.01em;
   }
-  .masthead time {
+  /* Today's Oslo date on its title's baseline: the day the counts belong to. */
+  .title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    margin-top: 16px;
+    padding-bottom: 20px;
+  }
+  .title-row .title {
+    margin: 0;
+    padding: 0;
+  }
+  .title-row time {
     color: var(--color-muted);
+    font-size: var(--text-meta);
+    font-weight: 500;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 
   .title {
@@ -184,16 +215,85 @@
     font-weight: var(--text-title--font-weight);
   }
 
-  .colophon {
+  /* The liner's printed margin: one hairline, then one row of small print, stacked in 44 px rows
+     on a phone. */
+  .foot {
     display: grid;
-    gap: 8px;
-    padding-block: 20px 32px;
+    margin-top: 8px;
+    padding-block: 8px 32px;
     border-top: 1px solid var(--color-etch);
-    text-wrap: pretty;
     color: var(--color-muted);
     font-size: var(--text-tiny);
     line-height: var(--text-tiny--line-height);
     font-weight: 500;
+  }
+  /* One sentence a line, so a weekly note never breaks mid-sentence. */
+  .foot > p {
+    padding-block: 14px 4px;
+  }
+  .foot > p > span {
+    display: block;
+  }
+  .foot__controls {
+    display: contents;
+  }
+  .foot__controls > * {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .foot__controls > .trace {
+    justify-self: start;
+    min-height: 0;
+    padding-block: 13px;
+    background-position:
+      left bottom 11px,
+      left bottom 11px;
+  }
+  /* Room above it where a page ends on a control rather than a hairline row. */
+  .page > main:not(:has(> .shelf:last-child, > .empty:last-child, > .editor__more:last-child, > .habits:last-child)) + .foot {
+    margin-top: 40px;
+  }
+  @media (width >= 68.75rem) {
+    .foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      padding-block: 6px 40px;
+    }
+    /* The controls keep their width and one row; only the note wraps, in the room they leave
+       (a weekly habit makes it long). */
+    .foot > p {
+      flex: 1 1 0;
+      min-width: 0;
+      padding-block: 0;
+    }
+    .foot__controls {
+      display: flex;
+      flex: none;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 4px 28px;
+      white-space: nowrap;
+    }
+    .foot .sign-out {
+      flex-wrap: nowrap;
+    }
+    .foot .sign-out__ask {
+      max-width: 22rem;
+      white-space: normal;
+    }
+    /* Under the row, whatever its length: inline-size containment keeps a long sentence from
+       widening the controls. */
+    .foot__controls > .day__error {
+      flex-basis: 100%;
+      contain: inline-size;
+      white-space: normal;
+      text-align: right;
+      text-wrap: balance;
+    }
   }
 
   /* Native radios drawn as words (the theme, a habit's period); the chosen one keeps a trace,
@@ -226,7 +326,7 @@
       left bottom 0.15rem;
   }
   .words label:has(:checked) .trace {
-    --rest: 100%;
+    --rest-c: currentColor;
   }
   .words label:has(:focus-visible) .trace {
     border-radius: 4px;
@@ -252,17 +352,27 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0 28px;
+    gap: 8px 24px;
     min-height: 44px;
+    padding-block: 6px;
   }
   .sign-out__ask {
     display: grid;
-    gap: 2px;
-    padding-top: 6px;
+    gap: 10px;
+    padding-block: 12px;
   }
-  .sign-out__ask > p:first-child,
-  .sign-out__ask .sign-out__yes {
+  .sign-out__ask > p:first-child {
     color: var(--color-ink);
+  }
+  /* The footer's buttons are its small print's size, and their current stays ink inside a habit
+     too: the frame is the same on every page. */
+  .foot .button {
+    --lit: var(--color-ink);
+    --r: 8px;
+    height: 36px;
+    min-width: 0;
+    padding-inline: 13px;
+    font-size: var(--text-tiny);
   }
 
   .habit,
@@ -569,14 +679,6 @@
       max-width: 17.5rem;
       margin-top: 8px;
     }
-    /* The footer sits on the habits' columns, so the sheet ends on its own grid. */
-    .colophon {
-      grid-auto-flow: column;
-      grid-auto-columns: minmax(0, 1fr);
-    }
-    .colophon > * + * {
-      padding-left: var(--gutter);
-    }
 
     /* From four habits the sheet runs in rows (data-cols, from the dashboard). A row shares
        its tracks, so a name that wraps never knocks its coil out of line. */
@@ -808,20 +910,37 @@
     color: var(--color-short);
   }
 
-  /* Utility text buttons (Undo, Remove): padded to 44 px without moving the line. */
+  /* Text buttons (Undo, a tap's Remove, Use another email) and links set in a line of text: on an
+     etch trace at rest, current runs along it on hover. Padded to a thumb's height without moving
+     the line, so the trace hangs off the content box. */
+  .undo,
+  .shelf__archived a,
+  .poster__kind a,
+  .stickers__note a {
+    background:
+      linear-gradient(currentColor 0 0) left bottom -2px / 0% 2px no-repeat,
+      linear-gradient(var(--color-etch) 0 0) left bottom -2px / 100% 1px no-repeat;
+    background-origin: content-box;
+    transition:
+      color 0.35s var(--ease-soft),
+      background-size 0.45s var(--ease-out);
+  }
   .undo {
     position: relative;
     padding: 13px 8px;
     margin: -13px -8px;
     color: inherit;
     font: inherit;
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 3px;
     cursor: pointer;
-    transition:
-      color 0.35s var(--ease-soft),
-      text-decoration-thickness 0.35s var(--ease-soft);
+  }
+  .undo:focus-visible,
+  .shelf__archived a:focus-visible,
+  .poster__kind a:focus-visible,
+  .stickers__note a:focus-visible {
+    color: var(--color-ink);
+    background-size:
+      100% 2px,
+      100% 1px;
   }
   .undo:focus-visible {
     border-radius: 10px;
@@ -834,84 +953,186 @@
   }
   @media (hover: hover) {
     .undo:hover,
-    .tap .undo:hover {
+    .tap .undo:hover,
+    .shelf__archived a:hover,
+    .poster__kind a:hover,
+    .stickers__note a:hover {
       color: var(--color-ink);
-      text-decoration-thickness: 2px;
+      background-size:
+        100% 2px,
+        100% 1px;
     }
   }
 
-  /* Ink text button. Hovered or focused, the ground rises from its bottom edge and the text turns
-     ink, so it inverts inside an ink edge that keeps its shape; a busy one stays as it is. */
+  /* Buttons are wound: each is a small coil, with three unlit turns round it at the coil's pitch,
+     the inner two broken at the left where each steps out. Touched, current winds them on from
+     the break, inner first, and closes at the right; inside a habit it's the habit's colour. */
   .button {
+    --r: 10px;
+    --lit: var(--trace, var(--color-ink));
+    position: relative;
     min-width: 5.5rem;
     height: 44px;
     padding-inline: 18px;
-    border-radius: 10px;
-    background:
-      linear-gradient(var(--color-ground) 0 0) left bottom / 100% 0 no-repeat,
-      var(--color-ink);
-    box-shadow: inset 0 0 0 1.5px var(--color-ink);
+    border-radius: var(--r);
+    background: var(--color-ink);
     color: var(--color-ground);
-    font-weight: 650;
+    font-weight: 600;
+    letter-spacing: -0.005em;
     cursor: pointer;
+    /* The third turn is the outline, which follows the radius; it lights after the inner two. */
+    outline: 1px solid var(--color-unlit);
+    outline-offset: 8px;
     transition:
-      background-size 0.45s var(--ease-out),
-      color 0.45s var(--ease-out),
+      outline-color 0.3s var(--ease-soft) 0.14s,
+      color 0.35s var(--ease-soft),
       scale 0.15s var(--ease-soft);
   }
-  .button:not(:disabled, [aria-disabled]):focus-visible {
-    background-size:
-      100% 100%,
-      auto;
-    color: var(--color-ink);
+  .button::before,
+  .button::after,
+  .new-habit__mark::after {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    padding: 1px;
+    border-radius: calc(var(--r) + 3px);
+    /* A 1 px ring: the box minus its content box. */
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    background: conic-gradient(
+      from calc(270deg + var(--spin)),
+      transparent 0 2deg,
+      var(--lit) 0 max(2deg, calc(var(--sweep) / 2)),
+      var(--color-unlit) 0 min(358deg, calc(360deg - var(--sweep) / 2)),
+      var(--lit) 0 358deg,
+      transparent 0
+    );
+    pointer-events: none;
+    transition: --sweep 0.45s var(--ease-out);
+  }
+  .button::after {
+    inset: -6px;
+    border-radius: calc(var(--r) + 6px);
+    transition-delay: 0.07s;
+  }
+  @media (hover: hover) {
+    .button:not(:disabled, [aria-disabled]):hover {
+      outline-color: var(--lit);
+    }
+    .button:not(:disabled, [aria-disabled]):hover::before,
+    .button:not(:disabled, [aria-disabled]):hover::after {
+      --sweep: 360deg;
+    }
+  }
+  .button:not(:disabled, [aria-disabled]):focus-visible::before,
+  .button:not(:disabled, [aria-disabled]):focus-visible::after {
+    --sweep: 360deg;
   }
   .button:active {
     scale: 0.97;
   }
-  @media (hover: hover) {
-    .button:not(:disabled, [aria-disabled]):hover {
-      background-size:
-        100% 100%,
-        auto;
-      color: var(--color-ink);
+  .button:active::before,
+  .button:active::after {
+    --sweep: 360deg;
+    transition: none;
+  }
+  /* Busy: the label dims, the inner turn stays lit, and a short current runs round the next one
+     for as long as the wait, which is real. */
+  .button:disabled,
+  .button[aria-disabled] {
+    cursor: progress;
+    color: color-mix(in oklab, var(--color-ground) 55%, var(--color-ink));
+  }
+  .button:disabled::before,
+  .button[aria-disabled]::before {
+    --sweep: 360deg;
+  }
+  .button:disabled::after,
+  .button[aria-disabled]::after {
+    --sweep: 70deg;
+    animation: wound-run 1.1s linear infinite;
+  }
+  @keyframes wound-run {
+    to {
+      --spin: 360deg;
     }
   }
   /* The thumb's button: full width and a finger tall. Before the editor's rules, so its desktop
      Save can go back to its own width. */
   .button--wide {
+    --r: 12px;
     width: 100%;
     height: 56px;
-    border-radius: 12px;
     font-size: var(--text-body);
   }
-  .button:disabled {
-    cursor: progress;
-    opacity: 0.6;
+  /* Outlined: no plate. Its die-cut edge is the first turn, two more outside it. */
+  .button--line {
+    --r: 9px;
+    min-width: 0;
+    height: 40px;
+    padding-inline: 16px;
+    background: none;
+    color: var(--color-ink);
+    font-size: var(--text-meta);
+    font-weight: 550;
+    outline-offset: 5px;
+  }
+  .button--line::before {
+    inset: 0;
+    border-radius: var(--r);
+  }
+  .button--line::after {
+    inset: -3px;
+    border-radius: calc(var(--r) + 3px);
+  }
+  .button--line:disabled,
+  .button--line[aria-disabled] {
+    color: var(--color-muted);
+  }
+  .button--short {
+    --lit: var(--color-short);
+    color: var(--color-short);
+  }
+  /* The footer's small print carries two turns. */
+  .foot .button--line {
+    outline: 0;
+  }
+  /* Focused, busy or not, the outer turn thickens into the focus ring. */
+  .button:focus-visible,
+  .foot .button--line:focus-visible {
+    outline: 2px solid var(--lit);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .button,
+    .button::before,
+    .button::after,
+    .new-habit__mark,
+    .new-habit__mark::after {
+      transition: none;
+    }
+    .button:disabled::after,
+    .button[aria-disabled]::after {
+      --sweep: 0deg;
+      animation: none;
+    }
   }
 
-  /* Under the habits: a new one, and the archived ones by name. */
-  .shelf {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 4px 24px;
-    padding-block: 10px 22px;
-    border-top: 1px solid var(--color-etch);
-  }
-  .shelf__new {
+  /* New habit, in the header: the empty die-cut mark with its plus and one unlit turn, and the
+     name on its trace. Touched, the turn winds on and current runs under the name. */
+  .new-habit {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding-block: 10px;
+    gap: 12px;
+    padding-block: 12px;
+    padding-left: 4px;
     border-radius: 4px;
-    font-size: var(--text-name);
-    line-height: var(--text-name--line-height);
-    letter-spacing: var(--text-name--letter-spacing);
-    font-weight: var(--text-name--font-weight);
+    font-weight: 650;
   }
-  /* An empty die-cut cell with a plus: where the next sticker goes. */
-  .shelf__mark {
+  .new-habit__mark {
+    --r: 5px;
+    --lit: var(--color-ink);
+    position: relative;
     width: 22px;
     aspect-ratio: 1;
     border-radius: 22%;
@@ -921,18 +1142,52 @@
       linear-gradient(var(--color-muted) 0 0) center / 1.5px 10px no-repeat;
     transition: box-shadow 0.35s var(--ease-soft);
   }
-  .shelf__new .trace {
-    display: inline-block;
-    padding-bottom: 12px;
-    margin-bottom: -12px;
+  .new-habit__mark::after {
+    inset: -4px;
+    border-radius: calc(var(--r) + 4px);
   }
-  .shelf__new:focus-visible .trace {
+  .new-habit .trace {
+    display: inline-block;
+    padding-bottom: 8px;
+    margin-bottom: -8px;
+  }
+  .new-habit:focus-visible .trace {
     background-size:
       100% 2px,
       var(--rest) 1px;
   }
-  .shelf__new:focus-visible .shelf__mark {
+  .new-habit:focus-visible .new-habit__mark,
+  .new-habit[aria-current="page"] .new-habit__mark {
     box-shadow: inset 0 0 0 1px var(--color-ink);
+  }
+  .new-habit:focus-visible .new-habit__mark::after {
+    --sweep: 360deg;
+  }
+  .new-habit[aria-current="page"] .trace {
+    --rest-c: currentColor;
+  }
+  @media (hover: hover) {
+    .new-habit:hover .trace {
+      background-size:
+        100% 2px,
+        var(--rest) 1px;
+    }
+    .new-habit:hover .new-habit__mark {
+      box-shadow: inset 0 0 0 1px var(--color-ink);
+    }
+    .new-habit:hover .new-habit__mark::after {
+      --sweep: 360deg;
+    }
+  }
+
+  /* Under the habits: the archived ones and the loose stickers by name. */
+  .shelf {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 24px;
+    padding-block: 10px 22px;
+    border-top: 1px solid var(--color-etch);
   }
   .shelf__archived {
     color: var(--color-muted);
@@ -943,35 +1198,19 @@
   .shelf__archived a,
   .poster__kind a {
     color: var(--color-ink);
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 3px;
-    transition: text-decoration-thickness 0.35s var(--ease-soft);
   }
   /* Padded to a thumb's height without moving the line. */
-  .shelf__archived a {
+  .shelf__archived a,
+  .stickers__note a {
     display: inline-block;
     padding: 12px 7px;
     margin: -12px -7px;
   }
   .shelf__archived a:focus-visible,
-  .poster__kind a:focus-visible {
+  .poster__kind a:focus-visible,
+  .stickers__note a:focus-visible {
     border-radius: 8px;
     outline-offset: -4px;
-  }
-  @media (hover: hover) {
-    .shelf__new:hover .trace {
-      background-size:
-        100% 2px,
-        var(--rest) 1px;
-    }
-    .shelf__new:hover .shelf__mark {
-      box-shadow: inset 0 0 0 1px var(--color-ink);
-    }
-    .shelf__archived a:hover,
-    .poster__kind a:hover {
-      text-decoration-thickness: 2px;
-    }
   }
 
   /* No habits yet: the slot where a sticker would sit, a dashed die-cut edge with nothing in it. */
@@ -1329,8 +1568,12 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 12px 20px;
+    gap: 12px 24px;
     flex-basis: 100%;
+  }
+  /* Keep it stands as tall as the ink button beside it. */
+  .editor__confirm .button--line {
+    height: 44px;
   }
   .editor__confirm p {
     flex-basis: 100%;
@@ -1403,8 +1646,6 @@
   }
   .stickers__note a {
     color: var(--color-ink);
-    text-decoration: underline;
-    text-underline-offset: 3px;
   }
   .stickers__list {
     margin-top: 8px;
@@ -1503,7 +1744,8 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    gap: 8px var(--gutter);
+    /* Room for the button's turns. */
+    gap: 8px 20px;
     margin-top: 14px;
   }
   .line-form label {
@@ -1554,12 +1796,6 @@
     font-size: max(1rem, var(--text-meta));
     text-overflow: ellipsis;
   }
-  .panel__copy {
-    width: 100%;
-    height: 56px;
-    border-radius: 12px;
-    font-size: var(--text-body);
-  }
   /* A real sequence, so the steps are numbered. */
   .panel__steps {
     display: grid;
@@ -1588,9 +1824,6 @@
   }
   .panel__done {
     justify-self: start;
-    color: var(--color-muted);
-    font-size: var(--text-meta);
-    font-weight: 500;
   }
 
   /* /stickers/[id]: what it logs to beside its coil, then the habits it can move to. */
@@ -1873,7 +2106,9 @@
     line-height: 1;
     font-weight: 600;
   }
+  /* The arrows read as controls on their own, so no trace at rest. */
   .day__step.trace {
+    --rest: 0%;
     background-position:
       center bottom 9px,
       center bottom 9px;
@@ -1954,7 +2189,7 @@
     grid-template-columns: auto minmax(0, 8rem) auto;
     justify-content: start;
     align-items: center;
-    gap: var(--gutter);
+    gap: 20px;
     margin-top: 14px;
   }
   .add-at label {
@@ -2158,7 +2393,7 @@
   }
   .login__controls {
     display: grid;
-    gap: 12px;
+    gap: 20px;
     max-width: 26rem;
     margin-top: 8px;
   }
@@ -2187,11 +2422,6 @@
   }
   .login__other {
     justify-self: start;
-    color: var(--color-muted);
-    font-size: var(--text-meta);
-  }
-  .login__guide {
-    margin-top: 40px;
     color: var(--color-muted);
     font-size: var(--text-meta);
   }
@@ -2270,11 +2500,16 @@
     }
   }
   @media (width >= 68.75rem) {
-    /* A poster: the strip across the sheet, centred in the window. */
+    /* A poster: the strip across the sheet, centred in the window between header and footer. */
+    .page:has(> .login) {
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+    }
     .login {
+      flex: 1;
       display: grid;
       align-content: center;
-      min-height: calc(100dvh - 3rem);
       padding-block: 32px 64px;
     }
     .login .title {
@@ -2412,8 +2647,9 @@
     .coil__svg,
     .coil__field,
     .undo,
-    .button,
-    .shelf__mark,
+    .shelf__archived a,
+    .poster__kind a,
+    .stickers__note a,
     .slot__edge,
     .kinds label,
     .stepper button,
@@ -2691,10 +2927,10 @@
     display: grid;
     place-items: center;
     min-width: 0;
+    --r: 12px;
     width: 52px;
     height: 52px;
     padding: 0;
-    border-radius: 12px;
   }
   .guide__play svg {
     width: 20px;
@@ -2740,11 +2976,11 @@
     padding-block: 40px 56px;
   }
   .guide__end .button {
+    --r: 12px;
     display: inline-grid;
     place-items: center;
     height: 56px;
     padding-inline: 24px;
-    border-radius: 12px;
     font-size: var(--text-name);
   }
   .guide__h2 {
