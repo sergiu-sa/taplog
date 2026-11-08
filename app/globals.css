@@ -160,14 +160,14 @@
       --gutter: 16px;
     }
   }
-  /* The sheet stays narrow enough that coil and grid fill each column. Past 1440 Today's sheet
-     keeps 1440's margins and widens with its row; other pages send no --c4, so keep 68rem. */
+  /* Narrow enough that coil and grid fill each column, until past 1440 Today's sheet widens with
+     its row (other pages send no --c4). 100vw, as media queries count it, scrollbar included. */
   @media (width >= 68.75rem) {
     .page {
       --margin: 32px;
       --gutter: 24px;
       --cols: var(--c4);
-      max-width: calc(max(68rem, min(100% - 22rem, var(--cols, 0) * 30rem)) + 2 * var(--margin));
+      max-width: calc(max(68rem, min(100vw - 22rem, var(--cols, 0) * 30rem)) + 2 * var(--margin));
     }
   }
   /* A row takes another habit wherever every column keeps 17rem: from (22 + 17 × columns) rem. */
