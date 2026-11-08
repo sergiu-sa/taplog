@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
+import { useRef, type CSSProperties } from "react";
 import { formatDay, habitStatus, todayStreak, weekStart, type Kind, type Period } from "@/lib/habits";
 import { curtainFrom, ease, gsap, useMotion } from "@/lib/motion";
 import { habitVars } from "@/lib/palette";
@@ -66,28 +66,30 @@ export function HabitRow({
   );
 
   return (
-    <section ref={row} className="habit" aria-labelledby={`habit-${id}-name`} style={habitVars(habit.color)}>
-      <h2 id={`habit-${id}-name`} className="habit__name">
-        <Link
-          href={href}
-          prefetch={false}
-          className="trace"
-          transitionTypes={["nav-forward"]}
-          onClick={() => curtainFrom(row.current?.querySelector(".coil"))}
-        >
-          {name}
-        </Link>
-      </h2>
+    <section ref={row} className="habit" aria-labelledby={`habit-${id}-name`} style={{ ...habitVars(habit.color), "--i": index } as CSSProperties}>
+      <div className="habit__head">
+        <h2 id={`habit-${id}-name`} className="habit__name">
+          <Link
+            href={href}
+            prefetch={false}
+            className="trace"
+            transitionTypes={["nav-forward"]}
+            onClick={() => curtainFrom(row.current?.querySelector(".coil"))}
+          >
+            {name}
+          </Link>
+        </h2>
 
-      <p className="habit__streak">
-        {!first
-          ? "Nothing logged yet"
-          : streak
-            ? `${streak}-${period} streak`
-            : habit.before
-              ? `Streak ended after ${habit.before} ${period}${habit.before === 1 ? "" : "s"}`
-              : "No streak"}
-      </p>
+        <p className="habit__streak">
+          {!first
+            ? "Nothing logged yet"
+            : streak
+              ? `${streak}-${period} streak`
+              : habit.before
+                ? `Streak ended after ${habit.before} ${period}${habit.before === 1 ? "" : "s"}`
+                : "No streak"}
+        </p>
+      </div>
 
       <div className="habit__today" id={`habit-${id}-today`}>
         <p className="count">
