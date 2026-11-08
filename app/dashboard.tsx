@@ -1,7 +1,7 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import { coil } from "@/lib/coil";
 import { addDays, formatDay, nextFrom, periodCounts, periodOf, periodTarget, runBefore, targetOn, weekStart, type Kind, type Period } from "@/lib/habits";
+import { sheetVars } from "@/lib/sheet";
 import type { Tables } from "@/lib/supabase/types";
 import { Footer, NewHabit, type Frame } from "./frame";
 import { HabitRow, type HabitView } from "./habit-row";
@@ -63,10 +63,6 @@ export function splitHabits(records: HabitRecord[], today: string, now: number) 
   };
 }
 
-// Up to three habits sit side by side as before; from four the sheet runs in balanced rows of
-// at most four (5 → 3 + 2, 7 → 4 + 3), which the desktop CSS reads from data-cols.
-const sheetCols = (n: number) => (n < 4 ? undefined : Math.ceil(n / Math.ceil(n / 4)));
-
 export function Dashboard({
   today,
   habits,
@@ -90,12 +86,12 @@ export function Dashboard({
   remove: Remove;
   frame: Frame;
 }) {
-  const cols = sheetCols(habits.length);
   const weekly = habits.some((h) => h.period === "week");
   return (
     <PageTurn>
       <Refresh />
-      <div className="page">
+      {/* The sheet's balanced count for each row length; the desktop CSS picks one by width. */}
+      <div className="page" style={habits.length > 0 ? sheetVars(habits.length) : undefined}>
         <header className="masthead">
           <Link href="/" prefetch={false} className="trace" aria-current="page">
             taplog
@@ -114,7 +110,7 @@ export function Dashboard({
           </div>
           {habits.length > 0 ? (
             <>
-              <div className="habits" data-cols={cols} style={cols ? ({ "--cols": cols } as CSSProperties) : undefined}>
+              <div className="habits">
                 {habits.map((h, i) => (
                   <HabitRow key={h.id} habit={h} today={today} index={i} href={`${habitHref}${h.id}`} add={add} remove={remove} />
                 ))}

@@ -160,12 +160,35 @@
       --gutter: 16px;
     }
   }
-  /* The sheet stays narrow enough that coil and grid fill each column. */
+  /* Narrow enough that coil and grid fill each column, until past 1440 Today's sheet widens with
+     its row (other pages send no --c4). 100vw, as media queries count it, scrollbar included. */
   @media (width >= 68.75rem) {
     .page {
       --margin: 32px;
       --gutter: 24px;
-      max-width: calc(68rem + 2 * var(--margin));
+      --cols: var(--c4);
+      max-width: calc(max(68rem, min(100vw - 22rem, var(--cols, 0) * 30rem)) + 2 * var(--margin));
+    }
+  }
+  /* A row takes another habit wherever every column keeps 17rem: from (22 + 17 × columns) rem. */
+  @media (width >= 107rem) {
+    .page {
+      --cols: var(--c5);
+    }
+  }
+  @media (width >= 124rem) {
+    .page {
+      --cols: var(--c6);
+    }
+  }
+  @media (width >= 141rem) {
+    .page {
+      --cols: var(--c7);
+    }
+  }
+  @media (width >= 158rem) {
+    .page {
+      --cols: var(--c8);
     }
   }
 
@@ -404,6 +427,9 @@
     padding-block: 18px 22px;
     border-top: 1px solid var(--color-etch);
   }
+  .habit__head {
+    display: contents;
+  }
   .habit__name {
     grid-area: name;
     font-size: var(--text-name);
@@ -630,40 +656,44 @@
   }
 
   @media (width >= 68.75rem) {
-    /* One column per habit, like stickers side by side on a sheet: all of them in one screen. */
+    /* One column per habit, like stickers side by side on a sheet, in balanced rows of --cols.
+       A row shares its tracks, so a wrapped name or a reserved line never moves a coil or grid. */
     .habits {
       display: grid;
-      grid-auto-flow: column;
-      grid-auto-columns: minmax(0, 1fr);
-      border-top: 1px solid var(--color-etch);
+      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+      container-type: inline-size;
     }
     .habit {
-      grid-template-columns: minmax(0, 1fr) auto;
-      grid-template-rows: none;
-      grid-template-areas:
-        "name streak"
-        "coil coil"
-        "today today"
-        "days days";
-      align-content: start;
-      padding: 24px var(--gutter) 32px;
-      border-top: 0;
+      /* 1 in a row's first or last column, from the habit's index (--i) and the row's length. */
+      --first: calc(1 - min(1, mod(var(--i), var(--cols))));
+      --last: calc(1 - min(1, mod(var(--i) + 1, var(--cols))));
+      grid-row: span 4;
+      grid-template-rows: subgrid;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: "head" "coil" "today" "days";
+      padding: 24px calc(var(--gutter) * (1 - var(--last))) 32px calc(var(--gutter) * (1 - var(--first)));
+      border-left: calc(1px - 1px * var(--first)) solid var(--color-etch);
     }
-    .habit:first-child {
-      padding-left: 0;
+    /* The name's focus ring reaches 14 px under it; a streak wrapped under the name clears it. */
+    .habit__head {
+      grid-area: head;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 14px var(--gutter);
     }
-    .habit:last-child {
-      padding-right: 0;
-    }
-    .habit + .habit {
-      border-left: 1px solid var(--color-etch);
+    /* A column under 20rem has no room for a long streak beside the name: there the name's basis
+       turns huge (even 1/64 px under, layout's unit) and takes the line; the streak wraps under it. */
+    .habit__name {
+      flex: 1 1 max(0px, (20rem - 100cqi / var(--cols)) * 100000);
+      min-width: 0;
     }
     .habit__today {
       margin-top: 28px;
     }
     .habit__days {
       align-self: start;
-      max-width: 16rem;
+      max-width: clamp(16rem, 16rem + (100vw - 90rem) / 10, 20rem);
       margin-top: 24px;
     }
     .days__grid {
@@ -673,53 +703,13 @@
       --c: 5px;
       --p: 4.25px;
     }
+    /* 280 px up to 1440, 380 from 1920. Outer columns have one gutter, not two, so their coils
+       are capped to the middle ones' width and a row's coils match. */
     .habit__coil {
       justify-self: center;
       width: 100%;
-      max-width: 17.5rem;
+      max-width: min(clamp(17.5rem, 17.5rem + (100vw - 90rem) * 5 / 24, 23.75rem), 100% - var(--gutter) * max(var(--first), var(--last)));
       margin-top: 8px;
-    }
-
-    /* From four habits the sheet runs in rows (data-cols, from the dashboard). A row shares
-       its tracks, so a name that wraps never knocks its coil out of line. */
-    .habits[data-cols] {
-      grid-auto-flow: row;
-      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-    }
-    .habits[data-cols] .habit {
-      grid-row: span 4;
-      grid-template-rows: subgrid;
-      padding-inline: var(--gutter);
-      border-left: 1px solid var(--color-etch);
-    }
-    .habits[data-cols="3"] .habit:nth-child(3n + 1),
-    .habits[data-cols="4"] .habit:nth-child(4n + 1) {
-      padding-left: 0;
-      border-left: 0;
-    }
-    .habits[data-cols="3"] .habit:nth-child(3n),
-    .habits[data-cols="4"] .habit:nth-child(4n) {
-      padding-right: 0;
-    }
-    .habits[data-cols="3"] .habit:nth-child(n + 4),
-    .habits[data-cols="4"] .habit:nth-child(n + 5) {
-      border-top: 1px solid var(--color-etch);
-    }
-    /* Four across leaves no room for a long streak beside the name. */
-    .habits[data-cols="4"] .habit {
-      grid-row: span 5;
-      grid-template-areas: "name name" "streak streak" "coil coil" "today today" "days days";
-    }
-    /* The name's focus ring reaches 14 px under it; the streak clears it. */
-    .habits[data-cols="4"] .habit__streak {
-      justify-self: start;
-      margin-top: 14px;
-    }
-    /* Outer columns have one gutter, not two, so their coils would draw larger than the
-       middle ones; capped to the middle's width, a row's coils match. */
-    .habits[data-cols="3"] .habit:is(:nth-child(3n + 1), :nth-child(3n)) .habit__coil,
-    .habits[data-cols="4"] .habit:is(:nth-child(4n + 1), :nth-child(4n)) .habit__coil {
-      max-width: min(17.5rem, 100% - var(--gutter));
     }
   }
 
