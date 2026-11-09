@@ -13,6 +13,12 @@ export function onTrack(kind: Kind, count: number, target: number) {
   return kind === "goal" ? count >= target : count <= target;
 }
 
+// A limit's last fifth, at least its last one: at 15 from 12, at 5 from 4. It needs a tap, or a
+// limit of 1 would say so from midnight; a limit of 0 is at its limit from the start.
+export function closeToLimit(kind: Kind, count: number, target: number) {
+  return kind === "limit" && count > 0 && count < target && target - count <= Math.max(1, Math.floor(target / 5));
+}
+
 // Today's page says "today" already; a week's count needs saying.
 export function habitStatus(kind: Kind, count: number, target: number, period: Period = "day"): { tone: Tone; label: string } {
   const s = status(kind, count, target);
@@ -25,15 +31,18 @@ function status(kind: Kind, count: number, target: number): { tone: Tone; label:
       ? { tone: "done", label: "Goal reached" }
       : { tone: "progress", label: `${target - count} to go` };
   }
+  if (closeToLimit(kind, count, target)) return { tone: "warn", label: "Close to your limit" };
   if (count < target) return { tone: "progress", label: `${target - count} left` };
   if (count === target) return { tone: "warn", label: "At your limit" };
   return { tone: "over", label: `${count - target} over your limit` };
 }
 
-// A finished day or week: a goal's is over, so it's short rather than still to go.
-export function pastStatus(kind: Kind, count: number, target: number) {
-  if (kind === "goal") return count >= target ? "Goal reached" : `${target - count} short`;
-  return count <= target ? "Within your limit" : `${count - target} over your limit`;
+// A finished day or week: a goal's is over, so it's short rather than still to go. `warn` is a
+// caution about taps to come, so a finished limit never wears it: muted within, ink right at it.
+export function pastStatus(kind: Kind, count: number, target: number): { tone: Tone; label: string } {
+  if (kind === "goal") return count >= target ? { tone: "done", label: "Goal reached" } : { tone: "progress", label: `${target - count} short` };
+  if (count > target) return { tone: "over", label: `${count - target} over your limit` };
+  return { tone: count < target ? "progress" : "done", label: "Within your limit" };
 }
 
 // A row of habit_targets: the target from that Oslo day until the next row.

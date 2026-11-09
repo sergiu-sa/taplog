@@ -86,7 +86,6 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
   const count = counted.reduce((n, r) => n + r.count!, 0);
   // The link stays valid, so the page can be reopened after the target changed.
   const target = periodTarget(habit.habit_targets, period, start);
-  const status = habitStatus(kind, count, target);
   const created = new Date(log.created_at).getTime();
   // Server Components render once per request, so this is just the request time.
   // eslint-disable-next-line react-hooks/purity
@@ -105,7 +104,7 @@ export default async function LoggedPage({ searchParams }: PageProps<"/logged">)
       when={period === "week" ? (current ? "This week" : `Week of ${formatDay(start, "date")}`) : current ? "Today" : formatDay(start)}
       count={count}
       target={target}
-      status={{ tone: status.tone, label: current ? status.label : pastStatus(kind, count, target) }}
+      status={current ? habitStatus(kind, count, target) : pastStatus(kind, count, target)}
       since={kind === "limit" ? sinceLine(created, prev?.created_at) : null}
       next={next}
       undo={age < UNDO_MS && <UndoButton id={id} sig={sig} action={undo} />}
