@@ -314,7 +314,7 @@ function weekSummary(kind: Kind, weeks: WeekCell[]) {
 }
 
 function dayStatus(kind: Kind, n: number, target: number, past: boolean) {
-  return past ? pastStatus(kind, n, target) : habitStatus(kind, n, target).label;
+  return (past ? pastStatus(kind, n, target) : habitStatus(kind, n, target)).label;
 }
 
 type Row = Tap & { gone?: boolean };
