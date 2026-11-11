@@ -205,3 +205,33 @@ export function formatGap(ms: number) {
   const d = Math.floor(h / 24);
   return h % 24 ? `${d} d ${h % 24} h` : `${d} d`;
 }
+
+// Reminders run inside these Oslo hours; the same habit nudges at most once per gap.
+export const WAKE = { from: 8, to: 22 };
+export const NUDGE_GAP_MIN = 180;
+
+export type Paced = { kind: Kind; period: Period; target: number; count: number; reminded?: string | null };
+
+// How many taps a goal is behind right now; 0 means stay silent (night, a met goal, any limit,
+// a nudge inside the gap). `target` and `count` are the current period's.
+export function behindPace({ kind, period, target, count, reminded }: Paced, now: number) {
+  if (kind !== "goal") return 0;
+  const [h, m] = osloTime(now).split(":").map(Number);
+  const into = (h - WAKE.from) * 60 + m;
+  const span = (WAKE.to - WAKE.from) * 60;
+  if (into < 0 || into >= span) return 0;
+  // Whole minutes: the check runs a few seconds into its minute, and so did the last one.
+  if (reminded && Math.floor(now / 60_000) - Math.floor(Date.parse(reminded) / 60_000) < NUDGE_GAP_MIN) return 0;
+  // The waking day in `n` equal slots, each tap due at the middle of its own.
+  const due = (n: number) => Math.floor((n * into) / span + 0.5);
+  if (period === "day") return Math.max(0, due(target) - count);
+  // A week: silent while the rest fits in the days after today, then today is a goal of 1.
+  const day = osloDay(now);
+  const after = 6 - (Date.parse(day) - Date.parse(weekStart(day))) / 86_400_000;
+  return due(1) ? Math.max(0, target - count - after) : 0;
+}
+
+// A nudge's words: the habit, then its count and the status line Today shows for it.
+export function nudgeText(name: string, count: number, target: number, period: Period) {
+  return { title: name, body: `${count} of ${target}. ${habitStatus("goal", count, target, period).label}.` };
+}
