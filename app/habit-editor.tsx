@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
-import { formatGap, MAX_TARGET, minTarget, SPACINGS, type Kind, type Period } from "@/lib/habits";
+import { formatGap, MAX_TARGET, minTarget, SPACINGS, WAKE, type Kind, type Period } from "@/lib/habits";
 import { ease, gsap, useMotion } from "@/lib/motion";
 import { habitVars, PALETTE } from "@/lib/palette";
 import type { Saved } from "./actions";
@@ -42,6 +42,8 @@ export function HabitEditor({
   // Kept while the field is hidden (a goal, a limit of 0), so the pick comes back; neither saves one.
   const [spacing, setSpacing] = useState(habit?.spacing ?? null);
   const step = STEPS.indexOf(spacing);
+  // Kept while a limit hides the field, like the spacing; a limit never nudges.
+  const [remind, setRemind] = useState(habit?.remind ?? true);
   const [state, formAction, saving] = useActionState(save, null);
   // Set in the same tick as the submit, before saving shows: a double click must not make two habits.
   const sent = useRef(false);
@@ -139,6 +141,24 @@ export function HabitEditor({
                 </div>
               </fieldset>
             )}
+            {kind === "goal" && (
+              <div className="field">
+                <span id="remind-label">Reminders</span>
+                <div className="words editor__remind" role="radiogroup" aria-labelledby="remind-label" aria-describedby="remind-note">
+                  {[true, false].map((on) => (
+                    <label key={String(on)}>
+                      <input type="radio" name="remind" value={on ? "on" : "off"} checked={remind === on} onChange={() => setRemind(on)} />
+                      <span className="trace">{on ? "On" : "Off"}</span>
+                    </label>
+                  ))}
+                </div>
+                <p id="remind-note" className="field__note">
+                  {/* One string: separate text nodes are kerned apart. */}
+                  {`When it falls behind, ${String(WAKE.from).padStart(2, "0")} to ${WAKE.to}.`}
+                </p>
+              </div>
+            )}
+            {kind !== "goal" && <input type="hidden" name="remind" value={remind ? "on" : "off"} />}
             {/* A pace, not a score: it never locks, so it stays a stepper after the first tap. A
                 limit of 0 never shows "Next from", so it offers none. */}
             {kind === "limit" && target > 0 && (

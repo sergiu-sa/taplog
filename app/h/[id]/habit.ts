@@ -9,7 +9,7 @@ export const loadHabit = cache(async (id: number) => {
   if (!auth) return null;
   const { data } = await supabase
     .from("habits")
-    .select("id, name, kind, period, color, archived_at, spacing_minutes, daily_counts(day, count), habit_targets(from_day, target), stickers(id, label, last_tap_at), logs(created_at)")
+    .select("id, name, kind, period, color, archived_at, spacing_minutes, remind, daily_counts(day, count), habit_targets(from_day, target), stickers(id, label, last_tap_at), logs(created_at)")
     .eq("id", id)
     .order("id", { referencedTable: "stickers" })
     .order("created_at", { referencedTable: "logs", ascending: false })

@@ -78,7 +78,7 @@ export async function saveHabit(id: number | null, _prev: Saved, form: FormData)
   if (!PALETTE.some((c) => c.hex === color)) return { error: "Pick a colour." };
   if (spacing !== null && !SPACINGS.includes(spacing)) return { error: "Pick a spacing." };
   // daily_target holds the target per period, a week's too.
-  const fields = { name, kind, period, daily_target: target, color: color as string, spacing_minutes: spacing };
+  const fields = { name, kind, period, daily_target: target, color: color as string, spacing_minutes: spacing, remind: form.get("remind") !== "off" };
 
   const { data, error } =
     id === null
