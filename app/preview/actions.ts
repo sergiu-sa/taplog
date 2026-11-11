@@ -63,3 +63,10 @@ export async function previewToken(label?: string): Promise<Made> {
   console.log(`preview sticker ${label ?? "new link"}`);
   return { link: `${(await headers()).get("origin")}/t/PreviewPreviewPreview0` };
 }
+
+// The footer's Reminders in the preview: the browser may subscribe, nothing is stored.
+export async function previewAddDevice(): Promise<boolean> {
+  return process.env.DESIGN_PREVIEW === "1";
+}
+
+export async function previewRemoveDevice() {}

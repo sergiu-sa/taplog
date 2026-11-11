@@ -1,8 +1,9 @@
 "use client";
 
 import { useId, useState, useTransition } from "react";
+import { thisDevice } from "./reminders";
 
-export type SignOutLocal = () => Promise<void>;
+export type SignOutLocal = (endpoint?: string) => Promise<void>;
 export type SignOutEverywhere = () => Promise<string | null>;
 
 const FAILED = "Didn't sign out. Try again.";
@@ -34,6 +35,14 @@ export function SignOut({ local, everywhere }: { local: SignOutLocal; everywhere
     });
   }
 
+  // This browser's reminders end with its session: the browser forgets its subscription and
+  // the action deletes the server's row.
+  async function leave() {
+    const sub = await thisDevice();
+    await sub?.unsubscribe();
+    return local(sub?.endpoint);
+  }
+
   function ask(open: boolean) {
     if (busy) return;
     setError("");
@@ -63,7 +72,7 @@ export function SignOut({ local, everywhere }: { local: SignOutLocal; everywhere
         </div>
       ) : (
         <p className="sign-out">
-          <button type="button" className="button button--line" aria-disabled={busy || undefined} onClick={() => run(local)}>
+          <button type="button" className="button button--line" aria-disabled={busy || undefined} onClick={() => run(leave)}>
             Sign out
           </button>
           <button type="button" className="button button--line" aria-disabled={busy || undefined} onClick={() => ask(true)}>

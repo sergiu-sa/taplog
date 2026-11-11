@@ -267,6 +267,10 @@
     align-items: center;
     min-height: 44px;
   }
+  /* Where a device can't turn reminders on, the row says why in the note's voice. */
+  .foot__remind > span {
+    margin-right: 16px;
+  }
   .foot__controls > .trace {
     justify-self: start;
     min-height: 0;

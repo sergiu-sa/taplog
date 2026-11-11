@@ -1,10 +1,11 @@
 import Link from "next/link";
 import type { Theme } from "@/lib/theme";
+import { Reminders, type AddDevice, type RemoveDevice } from "./reminders";
 import { SignOut, type SignOutEverywhere, type SignOutLocal } from "./sign-out";
 import { ThemeSwitch } from "./theme-switch";
 
 // What every signed-in page's footer needs from its loader. The preview passes no-op actions.
-export type Frame = { theme?: Theme; signOut: SignOutLocal; signOutEverywhere: SignOutEverywhere };
+export type Frame = { theme?: Theme; signOut: SignOutLocal; signOutEverywhere: SignOutEverywhere; addDevice: AddDevice; removeDevice: RemoveDevice };
 
 // The header's way to a new habit: the empty die-cut mark and its name.
 export function NewHabit({ href, current }: { href: string; current?: boolean }) {
@@ -22,6 +23,8 @@ export function Footer({
   theme,
   signOut,
   signOutEverywhere,
+  addDevice,
+  removeDevice,
   weekly,
   guide = true,
 }: Partial<Frame> & { weekly?: boolean; guide?: boolean }) {
@@ -43,6 +46,7 @@ export function Footer({
           </Link>
         )}
         <ThemeSwitch theme={theme} />
+        {signedIn && addDevice && removeDevice && <Reminders add={addDevice} remove={removeDevice} />}
         {signedIn && <SignOut local={signOut} everywhere={signOutEverywhere} />}
       </div>
     </footer>

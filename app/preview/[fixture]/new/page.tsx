@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { freeColor } from "@/lib/palette";
 import { readTheme } from "@/lib/theme";
 import { HabitEditor } from "../../../habit-editor";
-import { previewSave, previewSignOut, previewSignOutEverywhere } from "../../actions";
+import { previewAddDevice, previewRemoveDevice, previewSave, previewSignOut, previewSignOutEverywhere } from "../../actions";
 import { fixtures } from "../../fixtures";
 
 export const metadata: Metadata = { title: "New habit" };
@@ -21,7 +21,7 @@ export default async function PreviewNew({ params }: PageProps<"/preview/[fixtur
       backHref={`/preview/${fixture}`}
       newHref={`/preview/${fixture}/new`}
       save={previewSave}
-      frame={{ theme: await readTheme(), signOut: previewSignOut, signOutEverywhere: previewSignOutEverywhere }}
+      frame={{ theme: await readTheme(), signOut: previewSignOut, signOutEverywhere: previewSignOutEverywhere, addDevice: previewAddDevice, removeDevice: previewRemoveDevice }}
     />
   );
 }
