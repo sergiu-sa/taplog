@@ -53,6 +53,8 @@ export type Database = {
           kind: string
           name: string
           period: string
+          remind: boolean
+          reminded_at: string | null
           spacing_minutes: number | null
           user_id: string
         }
@@ -65,6 +67,8 @@ export type Database = {
           kind: string
           name: string
           period?: string
+          remind?: boolean
+          reminded_at?: string | null
           spacing_minutes?: number | null
           user_id?: string
         }
@@ -77,6 +81,8 @@ export type Database = {
           kind?: string
           name?: string
           period?: string
+          remind?: boolean
+          reminded_at?: string | null
           spacing_minutes?: number | null
           user_id?: string
         }
@@ -123,6 +129,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: number
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: never
+          p256dh: string
+          user_id?: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: never
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       stickers: {
         Row: {
