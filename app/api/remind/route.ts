@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import webpush from "web-push";
-import { behindPace, nudgeText, osloDay, weekStart, type Kind, type Period } from "@/lib/habits";
+import { behindPace, nudgeText, osloDay, periodCounts, periodOf, weekStart, type Kind, type Period } from "@/lib/habits";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
 // The app's own address: who is sending, as the push services ask (Apple refuses anything but
@@ -35,7 +35,10 @@ export async function POST(request: Request) {
 
   for (const h of habits.data) {
     const period = h.period as Period;
-    const count = counts.data.reduce((n, c) => (c.habit_id === h.id && (period === "week" || c.day === today) ? n + (c.count ?? 0) : n), 0);
+    // Counted as Today counts it. daily_target is the current period's target: a trigger
+    // copies each change of it into the history, so the two can't drift.
+    const taps = new Map(counts.data.filter((c) => c.habit_id === h.id).map((c) => [c.day!, c.count ?? 0]));
+    const count = periodCounts(taps, period).get(periodOf(period, today)) ?? 0;
     const mine = subs.data.filter((s) => s.user_id === h.user_id && !gone.has(s.id));
     if (!mine.length || !behindPace({ kind: h.kind as Kind, period, target: h.daily_target, count, reminded: h.reminded_at }, now)) continue;
 
@@ -55,7 +58,9 @@ export async function POST(request: Request) {
       ),
     );
     if (!delivered.some(Boolean)) continue;
-    await supabaseAdmin.from("habits").update({ reminded_at: new Date(now).toISOString() }).eq("id", h.id).throwOnError();
+    // A stamp that fails must not stop the habits after it or the pruning below.
+    const { error } = await supabaseAdmin.from("habits").update({ reminded_at: new Date(now).toISOString() }).eq("id", h.id);
+    if (error) console.error("nudge not stamped", error.code);
     sent++;
   }
 
