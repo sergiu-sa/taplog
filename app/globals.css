@@ -1842,6 +1842,10 @@
   .panel__done {
     justify-self: start;
   }
+  /* 20 px from Copy link's plate, past its turns. */
+  .panel__mode {
+    margin-top: 6px;
+  }
 
   /* /stickers/[id]: what it logs to beside its coil, then the habits it can move to. */
   .sticker-page {

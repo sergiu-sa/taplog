@@ -15,6 +15,19 @@ type Run = () => Promise<string | void>;
 
 const FAILED = "Didn't save. Try again.";
 
+const BROWSER_STEPS = [
+  "In NFC Tools: Write, Add a record, URL. Paste it.",
+  "Tap Write and hold the phone to the sticker.",
+  "Tap the sticker once to check that it logs.",
+];
+// A silent sticker holds no link: one on it would raise iOS's tag banner beside the automation.
+const SILENT_STEPS = [
+  "In Shortcuts: Automation, +, NFC. Scan this sticker, then Run Immediately.",
+  "Add Get contents of URL. Paste the link and set Method to POST.",
+  "Add Show notification with Contents of URL. Name it taplog.",
+  "Tap the sticker once: the notification shows the count.",
+];
+
 // A sticker drawn as a small three-turn coil: lit in its habit's colour while it logs, etch
 // while it logs nothing.
 function Mark({ live }: { live: boolean }) {
@@ -161,6 +174,8 @@ function LinkPanel({ label, link, replaced, onDone }: { label: string; link: str
   const root = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
+  // Only which steps to show: the same link logs from the sticker or from Shortcuts.
+  const [silent, setSilent] = useState(false);
 
   // The new sticker's turns draw in from the chip: an antenna getting its current.
   useMotion(
@@ -199,12 +214,33 @@ function LinkPanel({ label, link, replaced, onDone }: { label: string; link: str
       <button type="button" className="button button--wide" autoFocus onClick={copy}>
         {copied ? "Copied" : "Copy link"}
       </button>
+      <div className="field panel__mode">
+        <span id="silent-label">Silent</span>
+        <div className="words editor__remind" role="radiogroup" aria-labelledby="silent-label" aria-describedby="silent-note">
+          {[true, false].map((on) => (
+            <label key={String(on)}>
+              <input type="radio" name="silent" checked={silent === on} onChange={() => setSilent(on)} />
+              <span className="trace">{on ? "On" : "Off"}</span>
+            </label>
+          ))}
+        </div>
+        <p id="silent-note" className="field__note">
+          {silent ? "A Shortcuts automation logs each tap and shows the count. No browser." : "A tap opens the browser on Logged."}
+        </p>
+      </div>
       <ol className="panel__steps">
-        <li>In NFC Tools: Write, Add a record, URL. Paste it.</li>
-        <li>Tap Write and hold the phone to the sticker.</li>
-        <li>Tap the sticker once to check that it logs.</li>
+        {(silent ? SILENT_STEPS : BROWSER_STEPS).map((step) => (
+          <li key={step}>{step}</li>
+        ))}
       </ol>
-      {replaced && <p className="panel__note">The old link has stopped. A Shortcuts automation on this sticker needs the new one too.</p>}
+      {silent && <p className="panel__note">Leave the sticker blank: a link on it opens the browser as well.</p>}
+      {replaced && (
+        <p className="panel__note">
+          {silent
+            ? "The old link has stopped. If the sticker holds it, erase it in NFC Tools: Other, Erase tag."
+            : "The old link has stopped. A Shortcuts automation on this sticker needs the new one too."}
+        </p>
+      )}
       <p className="panel__note">Shown once. Paste it nowhere else: a chat’s link preview logs a tap.</p>
       <button type="button" className="button button--line panel__done" onClick={onDone}>
         Done
