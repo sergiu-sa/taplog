@@ -225,10 +225,11 @@ export function behindPace({ kind, period, target, count, reminded }: Paced, now
   // The waking day in `n` equal slots, each tap due at the middle of its own.
   const due = (n: number) => Math.floor((n * into) / span + 0.5);
   if (period === "day") return Math.max(0, due(target) - count);
-  // A week: silent while the rest fits in the days after today, then today is a goal of 1.
+  // A week: silent while the rest fits in the days after today, at an even share a day (1 up
+  // to 7 a week, 2 up to 14); what doesn't fit is due today, from the middle of the day.
   const day = osloDay(now);
   const after = 6 - (Date.parse(day) - Date.parse(weekStart(day))) / 86_400_000;
-  return due(1) ? Math.max(0, target - count - after) : 0;
+  return due(1) ? Math.max(0, target - count - after * Math.ceil(target / 7)) : 0;
 }
 
 // A nudge's words: the habit, then its count and the status line Today shows for it.
