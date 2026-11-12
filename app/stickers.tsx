@@ -210,6 +210,13 @@ function LinkPanel({ label, link, replaced, onDone }: { label: string; link: str
       <h3 id="panel-title" className="panel__title">
         Link for {label}
       </h3>
+      {/* Whichever mode, and before the link: a second automation on the tag would run beside the old one. */}
+      {replaced && (
+        <p className="panel__note">
+          The old link has stopped. If this sticker already has a Shortcuts automation, paste the new link into its Get contents of URL instead of making
+          another.
+        </p>
+      )}
       <input ref={field} className="panel__link" readOnly value={link} onFocus={(e) => e.target.select()} aria-label={`Link for ${label}`} />
       {/* Opened by Add or New link, so focus follows to the one thing to do next. */}
       <button type="button" className="button button--wide" autoFocus onClick={copy}>
@@ -228,12 +235,11 @@ function LinkPanel({ label, link, replaced, onDone }: { label: string; link: str
           <li key={step}>{step}</li>
         ))}
       </ol>
-      {silent && <p className="panel__note">Leave the sticker blank: a link on it opens the browser as well.</p>}
-      {replaced && (
+      {silent && (
         <p className="panel__note">
-          {silent
-            ? "The old link has stopped. If the sticker already has an automation, put the new link in its Get contents of URL instead of making another. If the sticker holds the old link, erase it in NFC Tools: Other, Erase tag."
-            : "The old link has stopped. A Shortcuts automation on this sticker needs the new one too."}
+          {replaced
+            ? "Leave the sticker blank: a link on it opens the browser as well. If it holds the old link, erase it in NFC Tools: Other, Erase tag."
+            : "Leave the sticker blank: a link on it opens the browser as well."}
         </p>
       )}
       <p className="panel__note">Shown once. Paste it nowhere else: a chat’s link preview logs a tap.</p>
