@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  experimental: {
+    // Vercel restores .next/cache before every build, and a restored Turbopack
+    // cache once shipped an old globals.css with no error.
+    turbopackFileSystemCacheForBuild: false,
+  },
 };
 
 export default nextConfig;
