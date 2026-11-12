@@ -233,7 +233,7 @@ function LinkPanel({ label, link, replaced, onDone }: { label: string; link: str
       {replaced && (
         <p className="panel__note">
           {silent
-            ? "The old link has stopped. If the sticker holds it, erase it in NFC Tools: Other, Erase tag."
+            ? "The old link has stopped. If the sticker already has an automation, put the new link in its Get contents of URL instead of making another. If the sticker holds the old link, erase it in NFC Tools: Other, Erase tag."
             : "The old link has stopped. A Shortcuts automation on this sticker needs the new one too."}
         </p>
       )}
