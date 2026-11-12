@@ -1403,7 +1403,7 @@
     pointer-events: none;
   }
   /* On and Off in the locked kind's weight; the labels' thumb-height padding is pulled back in. */
-  .editor__remind {
+  .on-off {
     margin: -12px 0 -12px -6px;
     color: var(--color-muted);
     font-size: var(--text-body);

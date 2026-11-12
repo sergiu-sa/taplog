@@ -9,6 +9,7 @@ import { Coil } from "./coil";
 import type { Made } from "./actions";
 import type { StickerRow, StickerView } from "./detail-view";
 import { Footer, NewHabit, type Frame } from "./frame";
+import { OnOff } from "./on-off";
 import { Refresh } from "./refresh";
 
 type Run = () => Promise<string | void>;
@@ -214,20 +215,15 @@ function LinkPanel({ label, link, replaced, onDone }: { label: string; link: str
       <button type="button" className="button button--wide" autoFocus onClick={copy}>
         {copied ? "Copied" : "Copy link"}
       </button>
-      <div className="field panel__mode">
-        <span id="silent-label">Silent</span>
-        <div className="words editor__remind" role="radiogroup" aria-labelledby="silent-label" aria-describedby="silent-note">
-          {[true, false].map((on) => (
-            <label key={String(on)}>
-              <input type="radio" name="silent" checked={silent === on} onChange={() => setSilent(on)} />
-              <span className="trace">{on ? "On" : "Off"}</span>
-            </label>
-          ))}
-        </div>
-        <p id="silent-note" className="field__note">
-          {silent ? "A Shortcuts automation logs each tap and shows the count. No browser." : "A tap opens the browser on Logged."}
-        </p>
-      </div>
+      <OnOff
+        id="silent"
+        label="Silent"
+        name="silent"
+        on={silent}
+        set={setSilent}
+        note={silent ? "A Shortcuts automation logs each tap and shows the count. No browser." : "A tap opens the browser on Logged."}
+        className="panel__mode"
+      />
       <ol className="panel__steps">
         {(silent ? SILENT_STEPS : BROWSER_STEPS).map((step) => (
           <li key={step}>{step}</li>

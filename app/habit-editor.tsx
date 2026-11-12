@@ -9,6 +9,7 @@ import type { Saved } from "./actions";
 import { Coil } from "./coil";
 import { Footer, NewHabit, type Frame } from "./frame";
 import type { EditorView } from "./detail-view";
+import { OnOff } from "./on-off";
 
 const STEPS = [null, ...SPACINGS];
 
@@ -142,21 +143,14 @@ export function HabitEditor({
               </fieldset>
             )}
             {kind === "goal" && (
-              <div className="field">
-                <span id="remind-label">Reminders</span>
-                <div className="words editor__remind" role="radiogroup" aria-labelledby="remind-label" aria-describedby="remind-note">
-                  {[true, false].map((on) => (
-                    <label key={String(on)}>
-                      <input type="radio" name="remind" value={on ? "on" : "off"} checked={remind === on} onChange={() => setRemind(on)} />
-                      <span className="trace">{on ? "On" : "Off"}</span>
-                    </label>
-                  ))}
-                </div>
-                <p id="remind-note" className="field__note">
-                  {/* One string: separate text nodes are kerned apart. */}
-                  {`When it falls behind, ${String(WAKE.from).padStart(2, "0")} to ${WAKE.to}.`}
-                </p>
-              </div>
+              <OnOff
+                id="remind"
+                label="Reminders"
+                name="remind"
+                on={remind}
+                set={setRemind}
+                note={`When it falls behind, ${String(WAKE.from).padStart(2, "0")} to ${WAKE.to}.`}
+              />
             )}
             {kind !== "goal" && <input type="hidden" name="remind" value={remind ? "on" : "off"} />}
             {/* A pace, not a score: it never locks, so it stays a stepper after the first tap. A
