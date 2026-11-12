@@ -39,7 +39,8 @@ export async function POST(_request: NextRequest, ctx: RouteContext<"/t/[token]"
   let data;
   try {
     data = await tap(token);
-  } catch {
+  } catch (e) {
+    console.error("tap failed", e);
     return say("Didn't save. Try again.", 500);
   }
   if (!data) return say("This sticker's link has stopped.", 404);
@@ -51,7 +52,8 @@ export async function POST(_request: NextRequest, ctx: RouteContext<"/t/[token]"
     const log = await loadLog(data.log_id, now);
     if (!log) return say("That tap was removed.");
     return say(tallyLine({ ...log, dup: data.dup ?? false }));
-  } catch {
+  } catch (e) {
+    console.error("tap counted, its line not read", e);
     return say(data.dup ? "Already counted." : "Logged.");
   }
 }
