@@ -5,6 +5,7 @@ import { loginPath } from "@/lib/login";
 import { habitVars, PALETTE } from "@/lib/palette";
 import { ease, gsap, reducedMotion, useMotion } from "@/lib/motion";
 import { Coil } from "../coil";
+import { recheckDevice } from "../reminders";
 
 export type LoginState = { email?: string; error?: string };
 
@@ -52,6 +53,9 @@ export function LoginForm({
     }
     return result;
   }, {});
+
+  // Whoever signs in from here has this device's reminders checked against the server again.
+  useEffect(recheckDevice, []);
 
   // The eighth digit closes the circuit and sends the code, so a code filled from Mail signs
   // straight in. Sign in stays for a corrected digit and for screen readers.

@@ -38,9 +38,21 @@ export function SignOut({ local, everywhere }: { local: SignOutLocal; everywhere
   // This browser's reminders end with its session: the browser forgets its subscription and
   // the action deletes the server's row.
   async function leave() {
+    return local(await forget());
+  }
+
+  // A browser that can't drop its subscription still signs out: the server's row goes anyway.
+  async function forget() {
     const sub = await thisDevice();
-    await sub?.unsubscribe();
-    return local(sub?.endpoint);
+    await sub?.unsubscribe().catch(() => {});
+    return sub?.endpoint;
+  }
+
+  // The action deletes every device's row; this browser also drops its own, so it reads Off
+  // when someone signs in here again.
+  async function leaveAll() {
+    await forget();
+    return everywhere();
   }
 
   function ask(open: boolean) {
@@ -61,7 +73,7 @@ export function SignOut({ local, everywhere }: { local: SignOutLocal; everywhere
               autoFocus
               aria-describedby={id}
               aria-disabled={busy || undefined}
-              onClick={() => run(everywhere)}
+              onClick={() => run(leaveAll)}
             >
               Yes, sign out everywhere
             </button>

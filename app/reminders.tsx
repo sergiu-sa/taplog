@@ -10,6 +10,13 @@ type State = "unknown" | "none" | "blocked" | "off" | "on";
 const KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 const SEEN = "reminders-checked";
 
+// Every sign-in passes /login, which calls this: whoever signs in next gets a fresh check.
+export function recheckDevice() {
+  try {
+    sessionStorage.removeItem(SEEN);
+  } catch {}
+}
+
 // This browser's push subscription, or null: also where the browser has no push at all.
 export async function thisDevice() {
   try {
@@ -55,7 +62,11 @@ async function turnOn(add: AddDevice): Promise<State> {
   await navigator.serviceWorker.register("/sw.js");
   const worker = await navigator.serviceWorker.ready;
   const sub = await worker.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(KEY!) });
-  if (!(await add(...parts(sub)))) throw new Error("not stored");
+  if (!(await add(...parts(sub)))) {
+    // Dropped, so the next try starts from a new address rather than the one refused.
+    await sub.unsubscribe().catch(() => {});
+    throw new Error("not stored");
+  }
   return "on";
 }
 
@@ -78,14 +89,18 @@ export function Reminders({ add, remove }: { add: AddDevice; remove: RemoveDevic
 
   useEffect(() => {
     let live = true;
-    look(add).then((s) => live && setState(s));
+    // A check that can't reach the server reads Off; On then stores the device again.
+    look(add)
+      .catch((): State => "off")
+      .then((s) => live && setState(s));
     return () => {
       live = false;
     };
   }, [add]);
 
   function pick(on: boolean) {
-    if (busy || state === (on ? "on" : "off")) return;
+    // Not before the first check has answered: its answer would overwrite the pick.
+    if (busy || state === "unknown" || state === (on ? "on" : "off")) return;
     setError("");
     startTransition(async () => {
       try {

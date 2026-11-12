@@ -219,6 +219,9 @@ export async function signOutEverywhere(): Promise<string | null> {
 // host and the keys to their shape; RLS files the row under this session's user.
 export async function addDevice(endpoint: string, p256dh: string, auth: string): Promise<boolean> {
   const supabase = await signedIn();
+  // Asked of Auth, not read from the token: after Sign out everywhere another device's token
+  // still verifies for up to an hour, and it must not put its reminders back.
+  if ((await supabase.auth.getUser()).error) return false;
   if (typeof endpoint !== "string" || typeof p256dh !== "string" || typeof auth !== "string") return false;
   const { error } = await supabase.from("push_subscriptions").insert({ endpoint, p256dh, auth });
   if (!error) return true;
