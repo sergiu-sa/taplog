@@ -53,7 +53,7 @@ export async function POST(_request: NextRequest, ctx: RouteContext<"/t/[token]"
     if (!log) return say("That tap was removed.");
     return say(tallyLine({ ...log, dup: data.dup ?? false }));
   } catch (e) {
-    console.error("tap counted, its line not read", e);
+    console.error("tap counted, its answer failed", e);
     return say(data.dup ? "Already counted." : "Logged.");
   }
 }
