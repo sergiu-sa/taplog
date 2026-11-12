@@ -144,7 +144,6 @@ export function HabitEditor({
             )}
             {kind === "goal" && (
               <OnOff
-                id="remind"
                 label="Reminders"
                 name="remind"
                 on={remind}

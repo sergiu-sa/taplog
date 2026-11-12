@@ -1,7 +1,10 @@
+"use client";
+
+import { useId } from "react";
+
 // On and Off as words on traces, the chosen one in ink, with a note under them: a goal's
 // Reminders in the editor, Silent in a sticker's link panel. The value is "on" or "off".
 export function OnOff({
-  id,
   label,
   name,
   on,
@@ -9,7 +12,6 @@ export function OnOff({
   note,
   className = "",
 }: {
-  id: string;
   label: string;
   name: string;
   on: boolean;
@@ -17,6 +19,7 @@ export function OnOff({
   note: string;
   className?: string;
 }) {
+  const id = useId();
   return (
     <div className={`field ${className}`.trim()}>
       <span id={`${id}-label`}>{label}</span>

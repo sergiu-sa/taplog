@@ -216,7 +216,6 @@ function LinkPanel({ label, link, replaced, onDone }: { label: string; link: str
         {copied ? "Copied" : "Copy link"}
       </button>
       <OnOff
-        id="silent"
         label="Silent"
         name="silent"
         on={silent}
