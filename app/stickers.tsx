@@ -9,11 +9,25 @@ import { Coil } from "./coil";
 import type { Made } from "./actions";
 import type { StickerRow, StickerView } from "./detail-view";
 import { Footer, NewHabit, type Frame } from "./frame";
+import { OnOff } from "./on-off";
 import { Refresh } from "./refresh";
 
 type Run = () => Promise<string | void>;
 
 const FAILED = "Didn't save. Try again.";
+
+const BROWSER_STEPS = [
+  "In NFC Tools: Write, Add a record, URL. Paste it.",
+  "Tap Write and hold the phone to the sticker.",
+  "Tap the sticker once to check that it logs.",
+];
+// A silent sticker holds no link: one on it would raise iOS's tag banner beside the automation.
+const SILENT_STEPS = [
+  "In Shortcuts: Automation, +, NFC. Scan this sticker, then Run Immediately.",
+  "Add Get contents of URL. Paste the link and set Method to POST.",
+  "Add Show notification with Contents of URL. Name it taplog.",
+  "Tap the sticker once: the notification shows the count.",
+];
 
 // A sticker drawn as a small three-turn coil: lit in its habit's colour while it logs, etch
 // while it logs nothing.
@@ -161,6 +175,8 @@ function LinkPanel({ label, link, replaced, onDone }: { label: string; link: str
   const root = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLInputElement>(null);
   const [copied, setCopied] = useState(false);
+  // Only which steps to show: the same link logs from the sticker or from Shortcuts.
+  const [silent, setSilent] = useState(false);
 
   // The new sticker's turns draw in from the chip: an antenna getting its current.
   useMotion(
@@ -194,17 +210,38 @@ function LinkPanel({ label, link, replaced, onDone }: { label: string; link: str
       <h3 id="panel-title" className="panel__title">
         Link for {label}
       </h3>
+      {/* Whichever mode, and before the link: a second automation on the tag would run beside the old one. */}
+      {replaced && (
+        <p className="panel__note">
+          The old link has stopped. If this sticker already has a Shortcuts automation, paste the new link into its Get contents of URL instead of making
+          another.
+        </p>
+      )}
       <input ref={field} className="panel__link" readOnly value={link} onFocus={(e) => e.target.select()} aria-label={`Link for ${label}`} />
       {/* Opened by Add or New link, so focus follows to the one thing to do next. */}
       <button type="button" className="button button--wide" autoFocus onClick={copy}>
         {copied ? "Copied" : "Copy link"}
       </button>
+      <OnOff
+        label="Silent"
+        name="silent"
+        on={silent}
+        set={setSilent}
+        note={silent ? "A Shortcuts automation logs each tap and shows the count. No browser." : "A tap opens the browser on Logged."}
+        className="panel__mode"
+      />
       <ol className="panel__steps">
-        <li>In NFC Tools: Write, Add a record, URL. Paste it.</li>
-        <li>Tap Write and hold the phone to the sticker.</li>
-        <li>Tap the sticker once to check that it logs.</li>
+        {(silent ? SILENT_STEPS : BROWSER_STEPS).map((step) => (
+          <li key={step}>{step}</li>
+        ))}
       </ol>
-      {replaced && <p className="panel__note">The old link has stopped. A Shortcuts automation on this sticker needs the new one too.</p>}
+      {silent && (
+        <p className="panel__note">
+          {replaced
+            ? "Leave the sticker blank: a link on it opens the browser as well. If it holds the old link, erase it in NFC Tools: Other, Erase tag."
+            : "Leave the sticker blank: a link on it opens the browser as well."}
+        </p>
+      )}
       <p className="panel__note">Shown once. Paste it nowhere else: a chat’s link preview logs a tap.</p>
       <button type="button" className="button button--line panel__done" onClick={onDone}>
         Done

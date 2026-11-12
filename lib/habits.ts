@@ -232,6 +232,15 @@ export function behindPace({ kind, period, target, count, reminded }: Paced, now
   return due(1) ? Math.max(0, target - count - after * Math.ceil(target / 7)) : 0;
 }
 
+export type Tally = { name: string; kind: Kind; period: Period; count: number; target: number; dup?: boolean; next?: string | null };
+
+// What a hold says out loud and a silent tap answers. A deduped tap says so where the status
+// goes; "Next from" follows /logged's rule, gone at or over the limit, where the status says stop.
+export function tallyLine({ name, kind, period, count, target, dup, next }: Tally) {
+  const status = dup ? "Already counted" : habitStatus(kind, count, target, period).label;
+  return `${name}, ${count} of ${target}. ${status}.${next && count < target ? ` Next from ${osloTime(next)}.` : ""}`;
+}
+
 // A nudge's words: the habit, then its count and the status line Today shows for it.
 export function nudgeText(name: string, count: number, target: number, period: Period) {
   return { title: name, body: `${count} of ${target}. ${habitStatus("goal", count, target, period).label}.` };
