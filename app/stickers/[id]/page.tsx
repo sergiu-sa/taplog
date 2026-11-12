@@ -5,7 +5,7 @@ import { osloDay } from "@/lib/habits";
 import { loginPath } from "@/lib/login";
 import { createClient } from "@/lib/supabase/server";
 import { readTheme } from "@/lib/theme";
-import { moveSticker, newLink, removeSticker, renameSticker, setArchived, signOut, signOutEverywhere } from "../../actions";
+import { addDevice, moveSticker, newLink, removeDevice, removeSticker, renameSticker, setArchived, signOut, signOutEverywhere } from "../../actions";
 import { toStickerView } from "../../detail-view";
 import { StickerPage } from "../../stickers";
 
@@ -56,7 +56,7 @@ export default async function Sticker({ params }: PageProps<"/stickers/[id]">) {
       newLink={newLink.bind(null, id)}
       remove={removeSticker.bind(null, id)}
       restore={habit?.archived ? setArchived.bind(null, habit.id, false) : undefined}
-      frame={{ theme: await readTheme(), signOut, signOutEverywhere }}
+      frame={{ theme: await readTheme(), signOut, signOutEverywhere, addDevice, removeDevice }}
     />
   );
 }

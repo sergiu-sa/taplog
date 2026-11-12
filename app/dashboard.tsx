@@ -14,6 +14,7 @@ const WEEKS = 5;
 // The shape the dashboard query returns. Fixtures use it too, so the preview goes
 // through the same conversion as real data.
 export type HabitRecord = Pick<Tables<"habits">, "id" | "name" | "kind" | "period" | "color" | "archived_at" | "spacing_minutes"> & {
+  remind?: boolean; // only the editor reads it
   daily_counts: Pick<Tables<"daily_counts">, "day" | "count">[];
   habit_targets: Pick<Tables<"habit_targets">, "from_day" | "target">[];
   stickers?: Pick<Tables<"stickers">, "id" | "label" | "last_tap_at">[];

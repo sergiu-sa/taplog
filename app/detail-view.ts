@@ -108,6 +108,7 @@ export type EditorView = {
   target: number;
   kept: number; // what the periods before this one were scored on
   spacing: number | null;
+  remind: boolean;
   color: string;
   archived: boolean;
   taps: number; // all of them: the kind locks at the first, and Delete says how many go
@@ -125,6 +126,7 @@ export function toEditorView(h: HabitRecord, today: string): EditorView {
     target: periodTarget(h.habit_targets, period, now),
     kept: targetOn(h.habit_targets, addDays(now, -1)),
     spacing: h.spacing_minutes,
+    remind: h.remind ?? true,
     color: h.color,
     archived: h.archived_at !== null,
     taps: h.daily_counts.reduce((n, r) => n + r.count!, 0),

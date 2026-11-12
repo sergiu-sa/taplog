@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { readTheme } from "@/lib/theme";
 import { toStickerView } from "../../../../detail-view";
 import { StickerPage } from "../../../../stickers";
-import { previewDone, previewSignOut, previewSignOutEverywhere, previewToken } from "../../../actions";
+import { previewAddDevice, previewDone, previewRemoveDevice, previewSignOut, previewSignOutEverywhere, previewToken } from "../../../actions";
 import { fixtures, fixtureStickers, today } from "../../../fixtures";
 
 const find = (id: string) => fixtureStickers.find((s) => s.id === Number(id));
@@ -30,7 +30,7 @@ export default async function PreviewSticker({ params }: PageProps<"/preview/[fi
       newLink={previewToken}
       remove={previewDone}
       restore={previewDone}
-      frame={{ theme: await readTheme(), signOut: previewSignOut, signOutEverywhere: previewSignOutEverywhere }}
+      frame={{ theme: await readTheme(), signOut: previewSignOut, signOutEverywhere: previewSignOutEverywhere, addDevice: previewAddDevice, removeDevice: previewRemoveDevice }}
     />
   );
 }

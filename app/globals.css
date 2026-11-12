@@ -267,6 +267,10 @@
     align-items: center;
     min-height: 44px;
   }
+  /* Where a device can't turn reminders on, the row says why in the note's voice. */
+  .foot__remind > span {
+    margin-right: 16px;
+  }
   .foot__controls > .trace {
     justify-self: start;
     min-height: 0;
@@ -1397,6 +1401,24 @@
     position: absolute;
     opacity: 0;
     pointer-events: none;
+  }
+  /* On and Off in the locked kind's weight; the labels' thumb-height padding is pulled back in. */
+  .editor__remind {
+    margin: -12px 0 -12px -6px;
+    color: var(--color-muted);
+    font-size: var(--text-body);
+    font-weight: 650;
+  }
+  .field__note {
+    color: var(--color-muted);
+    font-size: var(--text-tiny);
+    line-height: var(--text-tiny--line-height);
+    font-weight: 500;
+    text-wrap: balance;
+  }
+  /* Beside a taller field (Reminders next to Kind on desktop) a short one keeps its rows together. */
+  .editor__fields > .field {
+    align-content: start;
   }
   .kind-locked {
     font-size: var(--text-body);

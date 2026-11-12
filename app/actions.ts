@@ -78,7 +78,7 @@ export async function saveHabit(id: number | null, _prev: Saved, form: FormData)
   if (!PALETTE.some((c) => c.hex === color)) return { error: "Pick a colour." };
   if (spacing !== null && !SPACINGS.includes(spacing)) return { error: "Pick a spacing." };
   // daily_target holds the target per period, a week's too.
-  const fields = { name, kind, period, daily_target: target, color: color as string, spacing_minutes: spacing };
+  const fields = { name, kind, period, daily_target: target, color: color as string, spacing_minutes: spacing, remind: form.get("remind") !== "off" };
 
   const { data, error } =
     id === null
@@ -184,8 +184,10 @@ export async function removeSticker(id: number): Promise<string | void> {
 
 // This browser only; the home-screen app keeps its own session. With an expired token and Auth
 // out of reach, signOut() gives up before clearing anything, so then the cookies go by hand.
-export async function signOut() {
+export async function signOut(endpoint?: string) {
   const supabase = await createClient();
+  // This device's reminders end with its session, or a signed-out phone would still show counts.
+  if (typeof endpoint === "string") await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
   const { error } = await supabase.auth.signOut({ scope: "local" });
   if (error) await forget();
   redirect("/login", RedirectType.replace);
@@ -202,12 +204,36 @@ export async function signOutEverywhere(): Promise<string | null> {
   const { data, error: unread } = await supabase.auth.getSession();
   if (unread) return "Didn't sign out. Try again.";
   if (!data.session) return ALREADY;
+  // Every device's reminders go first: if the sign-out then fails, they are only switched off.
+  const { error: kept } = await supabase.from("push_subscriptions").delete().gt("id", 0);
+  if (kept) return "Didn't sign out. Try again.";
   const { error } = await supabase.auth.admin.signOut(data.session.access_token, "global");
   // A 403 session_not_found arrives as a session-missing error, not an API error.
   if (isAuthSessionMissingError(error) || (isAuthApiError(error) && [401, 403, 404].includes(error.status))) return ALREADY;
   if (error) return "Didn't sign out. Try again.";
   await forget();
   redirect("/login", RedirectType.replace);
+}
+
+// This device allowed notifications. The table's checks hold the endpoint to a push service's
+// host and the keys to their shape; RLS files the row under this session's user.
+export async function addDevice(endpoint: string, p256dh: string, auth: string): Promise<boolean> {
+  const supabase = await signedIn();
+  // Asked of Auth, not read from the token: after Sign out everywhere another device's token
+  // still verifies for up to an hour, and it must not put its reminders back.
+  if ((await supabase.auth.getUser()).error) return false;
+  if (typeof endpoint !== "string" || typeof p256dh !== "string" || typeof auth !== "string") return false;
+  const { error } = await supabase.from("push_subscriptions").insert({ endpoint, p256dh, auth });
+  if (!error) return true;
+  // Already stored counts only when the row is this user's: RLS hides anyone else's.
+  if (error.code !== "23505") return false;
+  const { data } = await supabase.from("push_subscriptions").select("id").eq("endpoint", endpoint).maybeSingle();
+  return !!data;
+}
+
+export async function removeDevice(endpoint: string) {
+  const supabase = await signedIn();
+  if (typeof endpoint === "string") await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint).throwOnError();
 }
 
 // Every Supabase cookie is named sb-<project>-auth-token…; theme is the app's only other one.
