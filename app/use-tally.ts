@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
-import { habitStatus, osloTime, type Kind, type Period } from "@/lib/habits";
+import { osloTime, tallyLine, type Kind, type Period } from "@/lib/habits";
 import { gsap } from "@/lib/motion";
 import type { Logged, Removed } from "./actions";
 
@@ -48,7 +48,7 @@ export function useTally({ id, name, kind, period, target, count: saved }: Habit
     });
   }
 
-  const status = (n: number) => `${name}, ${n} of ${target}. ${habitStatus(kind, n, target, period).label}.`;
+  const status = (n: number) => tallyLine({ name, kind, period, count: n, target });
 
   function fire() {
     run(1, status(count + 1), async () => {
