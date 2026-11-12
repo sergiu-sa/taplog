@@ -1,9 +1,9 @@
 import { refresh } from "next/cache";
 import { notFound } from "next/navigation";
 import { formatDay, habitStatus, pastStatus } from "@/lib/habits";
+import { loadLog } from "@/lib/logged";
 import { verifyId } from "@/lib/sig";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { loadLog } from "./load";
 import { LoggedUndone, LoggedView, sinceLine } from "./logged-view";
 import { UndoButton } from "./undo-button";
 

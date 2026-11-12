@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
 import type { NextRequest } from "next/server";
 import { tallyLine } from "@/lib/habits";
+import { loadLog } from "@/lib/logged";
 import { signId } from "@/lib/sig";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { loadLog } from "../../logged/load";
 
 // What new_sticker() hands out: 16 random bytes as base64url.
 const TOKEN = /^[A-Za-z0-9_-]{22}$/;
