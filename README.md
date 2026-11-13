@@ -31,7 +31,7 @@ Anything that opens a sticker's link logs a tap, a chat app's link preview inclu
 
 ## Run your own
 
-You need Node 24, pnpm, the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started), Docker for the local database, a Supabase project and a Vercel account. For stickers: an iPhone, NTAG213 NFC stickers and the NFC Tools app.
+You need Node 24 (what it's built and tested on), pnpm, the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started), Docker for the local database, a Supabase project and a Vercel account. For stickers: an iPhone, NTAG213 NFC stickers and the NFC Tools app.
 
 ### Locally
 
@@ -52,23 +52,26 @@ SIG_SECRET=<any random string>
 
 Run `pnpm dev`, open http://localhost:3000 and sign in as `dev@taplog.local`. The code arrives in the local mail viewer, Mailpit, at http://127.0.0.1:54324. The seed gives that user three habits with stickers: http://localhost:3000/t/local-water-sticker-01 logs a water tap.
 
+The reminder route answers locally only with `CRON_SECRET` and `VERCEL_PROJECT_PRODUCTION_URL` (any host, without `https://`) in that file too; without the host it answers 500. The local job never calls it, since the local Vault holds no address.
+
 Checks: `pnpm test` (the logic in `lib/`), `supabase test db` (the database, `supabase/tests/`) and `pnpm lint`.
 
 ### Supabase
 
 1. Create a project, then `supabase link --project-ref <your-project-ref>` and `supabase db push` to apply the migrations.
-2. In Authentication, change the Magic Link email template so it carries only the code, for example `Your taplog code is {{ .Token }}`. The sign-in form asks for the code; a link in the mail spends the same one-time token, so a mail scanner opening it would void the code.
-3. Turn off "Allow new users to sign up", then add yourself under Users. The app never creates an account.
-4. Supabase's built-in mailer only sends to your project's team, and (at the time of writing) 2 emails an hour. For daily use, add your own SMTP server in the Authentication settings.
+2. In Authentication, set the email OTP length to 8: the sign-in form takes an 8-digit code.
+3. Change the Magic Link email template so it carries only the code, for example `Your taplog code is {{ .Token }}`. The sign-in form asks for the code; a link in the mail spends the same one-time token, so a mail scanner opening it would void the code.
+4. Turn off "Allow new users to sign up", then add yourself under Users: Add user, Create new user, with Auto Confirm User ticked. The password is never used. Don't send an invite instead: its email holds a link, not a code. The app never creates an account.
+5. Supabase's built-in mailer only sends to your project's team, and (at the time of writing) 2 emails an hour. For daily use, add your own SMTP server in the Authentication settings.
 
 ### Vercel
 
-Import the repository. `vercel.json` runs the functions in `arn1` (Stockholm); change it to the region nearest your database. Then set these environment variables:
+Import the repository. `vercel.json` runs the functions in `arn1` (Stockholm); change it to the region nearest your database. Set these environment variables before the first deploy, since the build stops without `SIG_SECRET`:
 
 - `NEXT_PUBLIC_SUPABASE_URL`: the Supabase project's URL.
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: the publishable key, `sb_publishable_…`. Safe in the browser: row-level security guards the data.
 - `SUPABASE_SECRET_KEY`: the secret key, `sb_secret_…`. It bypasses row-level security, so it stays on the server.
-- `SIG_SECRET`: any long random string (`openssl rand -base64 32`). It signs the `/logged` links; the build stops without it.
+- `SIG_SECRET`: any long random string (`openssl rand -base64 32`). It signs the `/logged` links.
 - `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`: the push key pair, from `pnpm exec web-push generate-vapid-keys`.
 - `CRON_SECRET`: any long random string. The reminder job sends it; without it the route refuses every call.
 - `VERCEL_PROJECT_PRODUCTION_URL`: set by Vercel. On another host, set it to the app's host, without `https://`.
