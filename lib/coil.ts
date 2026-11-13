@@ -13,8 +13,8 @@ const JOG_Y = 54; // where each turn steps out to the next, on the left side
 const BRIDGE_Y = 46;
 const CHIP = 43; // chip spans 43..57
 
-export type Turn = { d: string; lit: boolean; spill: boolean };
-export type Edge = "etch" | "trace" | "ink" | "short";
+type Turn = { d: string; lit: boolean; spill: boolean };
+type Edge = "etch" | "trace" | "ink" | "short";
 
 function turnPath(a: number, next: number) {
   const b = 100 - a;
