@@ -54,7 +54,7 @@ export function toHabitView(h: HabitRecord, today: string, instant: number): Hab
   };
 }
 
-export type Shelved = { id: number; name: string };
+type Shelved = { id: number; name: string };
 
 // Today's habits, and the archived ones by name for the shelf under them.
 export function splitHabits(records: HabitRecord[], today: string, now: number) {

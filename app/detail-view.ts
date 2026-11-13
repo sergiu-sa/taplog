@@ -134,7 +134,7 @@ export function toEditorView(h: HabitRecord, today: string): EditorView {
   };
 }
 
-export type HabitChoice = { id: number; name: string; kind: Kind; period: Period; target: number; color: string };
+type HabitChoice = { id: number; name: string; kind: Kind; period: Period; target: number; color: string };
 
 export type StickerView = {
   id: number;

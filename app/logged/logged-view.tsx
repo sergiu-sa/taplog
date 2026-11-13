@@ -7,7 +7,7 @@ import { NextFrom } from "../next-from";
 
 // What a sticker tap opens. No client code of its own: the coil is drawn on the server and
 // its newest turn draws in by CSS; only Undo and the "Next from" timer run in the browser.
-export type LoggedProps = {
+type LoggedProps = {
   dup: boolean;
   fresh: boolean; // just logged, so the newest turn draws in
   name: string;

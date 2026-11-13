@@ -128,7 +128,7 @@ export function periodCounts(counts: Map<string, number>, period: Period) {
 
 // Every function below steps through periods: `today` stands for the period holding it, and
 // `first` (the first logged day) for the period holding that.
-export type Scored = { kind: Kind; period: Period; targets: Target[]; counts: Map<string, number> };
+type Scored = { kind: Kind; period: Period; targets: Target[]; counts: Map<string, number> };
 
 // Consecutive on-track periods ending with the one before today's, back to the first logged
 // one. A period with no logs counts as 0, which fails a goal and passes a limit, so `first`
@@ -208,9 +208,9 @@ export function formatGap(ms: number) {
 
 // Reminders run inside these Oslo hours; the same habit nudges at most once per gap.
 export const WAKE = { from: 8, to: 22 };
-export const NUDGE_GAP_MIN = 180;
+const NUDGE_GAP_MIN = 180;
 
-export type Paced = { kind: Kind; period: Period; target: number; count: number; reminded?: string | null };
+type Paced = { kind: Kind; period: Period; target: number; count: number; reminded?: string | null };
 
 // How many taps a goal is behind right now; 0 means stay silent (night, a met goal, any limit,
 // a nudge inside the gap). `target` and `count` are the current period's.
@@ -232,7 +232,7 @@ export function behindPace({ kind, period, target, count, reminded }: Paced, now
   return due(1) ? Math.max(0, target - count - after * Math.ceil(target / 7)) : 0;
 }
 
-export type Tally = { name: string; kind: Kind; period: Period; count: number; target: number; dup?: boolean; next?: string | null };
+type Tally = { name: string; kind: Kind; period: Period; count: number; target: number; dup?: boolean; next?: string | null };
 
 // What a hold says out loud and a silent tap answers. A deduped tap says so where the status
 // goes; "Next from" follows /logged's rule, gone at or over the limit, where the status says stop.

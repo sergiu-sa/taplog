@@ -1,8 +1,8 @@
 // Every step of the guide: its drawing's key, its caption (at most six words), the grey line under
 // it, and the full step for screen readers. The film's captions are these same captions.
-export type Step = { key: string; cap: string; note: string; alt: string };
+type Step = { key: string; cap: string; note: string; alt: string };
 // cols: how many stills a desktop row holds, so every row closes at the right edge; big: drawn larger.
-export type Section = { title: string; steps: Step[]; warn?: Step; tight?: boolean; cols?: number; big?: boolean };
+type Section = { title: string; steps: Step[]; warn?: Step; tight?: boolean; cols?: number; big?: boolean };
 
 export const SECTIONS: Section[] = [
   {
