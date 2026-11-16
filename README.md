@@ -16,6 +16,8 @@ It's a personal tool, made for one person. The code is public so you can read it
 
 ## How a tap works
 
+An NFC sticker holds a tiny chip and a coiled antenna, and no battery: a phone held within a few centimetres powers it and reads what's written on it, over the same [near-field communication](https://en.wikipedia.org/wiki/Near-field_communication) that tap to pay uses.
+
 1. A sticker holds a link like `https://your-app/t/<token>`. The token is 16 random bytes. The database keeps only its hash.
 2. The phone reads the sticker and opens the link. `/t/<token>` logs one tap for the sticker's habit and sends you to `/logged`, which shows the new count and offers Undo for 2 minutes. A second tap within 30 seconds counts once.
 3. A **silent** sticker holds no link. An iPhone Shortcuts automation sends a POST to the same link and shows the answer as a notification ("Water, 6 of 8. 2 to go."), so no browser opens.
@@ -31,7 +33,7 @@ Anything that opens a sticker's link logs a tap, a chat app's link preview inclu
 
 ## Run your own
 
-You need Node 24 (what it's built and tested on), pnpm, the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started), Docker for the local database, a Supabase project and a Vercel account. For stickers: an iPhone, NTAG213 NFC stickers and the NFC Tools app.
+You need Node 24 (what it's built and tested on), pnpm, the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started), Docker for the local database, a Supabase project and a Vercel account. For stickers: an iPhone, NTAG213 NFC stickers and the [NFC Tools](https://apps.apple.com/app/nfc-tools/id1252962749) app. NTAG213 is the common chip, sold cheaply in packs by many shops; search for its name.
 
 ### Locally
 
