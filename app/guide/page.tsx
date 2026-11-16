@@ -9,7 +9,16 @@ import { DRAW } from "./drawings";
 import { DrawIn, Film } from "./film";
 import { BLUE } from "./parts";
 
-export const metadata: Metadata = { title: "How it works" };
+// The card a shared link shows; the image is opengraph-image.jpg beside this file.
+export const metadata: Metadata = {
+  title: "How it works",
+  openGraph: {
+    title: "taplog: like tap to pay, but for habits",
+    description: "A habit log you feed by tapping NFC stickers with your phone.",
+    siteName: "taplog",
+    type: "website",
+  },
+};
 
 // Public on purpose: it reads no session and no data, so unlike every other page it has no
 // getClaims() check and stays out of proxy.ts's matcher.
